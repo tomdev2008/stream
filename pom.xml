@@ -15,6 +15,7 @@
     </modules>
 
     <properties>
+        <lombok.version>1.16.10</lombok.version>
         <guava.version>19.0</guava.version>
         <kafka.version>0.8.1.1</kafka.version>
     </properties>
@@ -23,6 +24,11 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 
@@ -52,6 +58,12 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
