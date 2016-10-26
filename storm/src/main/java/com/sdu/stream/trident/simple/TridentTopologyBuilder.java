@@ -1,4 +1,4 @@
-package com.sdu.stream.kafka.trident;
+package com.sdu.stream.trident.simple;
 
 import com.google.common.base.Strings;
 import org.apache.storm.Config;

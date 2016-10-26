@@ -1,4 +1,4 @@
-package com.sdu.stream.kafka.trident.state;
+package com.sdu.stream.trident.simple.state;
 
 import lombok.Getter;
 import lombok.Setter;
