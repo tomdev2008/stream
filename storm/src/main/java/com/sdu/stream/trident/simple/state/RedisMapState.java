@@ -141,23 +141,23 @@ public class RedisMapState<T> implements IBackingMap<T> {
             RedisMapState state = new RedisMapState(RedisUtils.getRedis(), this._serializer);
             state.registerMetric(conf, metrics);
 
+            CachedMap cachedMap = new CachedMap(state, _option.getLocalCacheSize());
+
             MapState mapState;
             switch (this._stateType) {
                 case TRANSACTIONAL:
-                    mapState = TransactionalMap.build(state);
+                    mapState = TransactionalMap.build(cachedMap);
                     break;
                 case NON_TRANSACTIONAL:
-                    mapState = NonTransactionalMap.build(state);
+                    mapState = NonTransactionalMap.build(cachedMap);
                     break;
                 case OPAQUE:
-                    mapState = OpaqueMap.build(state);
+                    mapState = OpaqueMap.build(cachedMap);
                     break;
                 default:
                     throw new RuntimeException("unknown trident state type " + _stateType);
             }
-            return mapState;
-//            return new SnapshottableMap(mapState, new Values("GlobalKey"));
-        }
+            return mapState;}
     }
 
 }
