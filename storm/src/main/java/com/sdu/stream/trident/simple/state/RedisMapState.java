@@ -1,7 +1,7 @@
 package com.sdu.stream.trident.simple.state;
 
 import com.google.common.collect.Lists;
-import org.apache.storm.Config;
+import com.sdu.stream.utils.RedisUtils;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.*;
@@ -73,6 +73,9 @@ public class RedisMapState<T> implements IBackingMap<T> {
     public void multiPut(List<List<Object>> keys, List<T> values) {
         // List<Object> = Tuple
         try {
+            if (keys == null || keys.isEmpty()) {
+                return;
+            }
             int size = keys.size();
             Pipeline pipeline = _jedis.pipelined();
             for (int i = 0; i < size; i++) {
@@ -88,7 +91,7 @@ public class RedisMapState<T> implements IBackingMap<T> {
     }
 
     protected void registerMetric(Map conf, IMetricsContext context) {
-        int bucketSize = (int) conf.getOrDefault(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 60);
+        int bucketSize = 60;
         _redisReadMetric = context.registerMetric("redis.read.count", new CountMetric(), bucketSize);
         _redisWriteMetric = context.registerMetric("redis.write.count", new CountMetric(), bucketSize);
         _redisExceptionMetric = context.registerMetric("redis.exception.count", new CountMetric(), bucketSize);
@@ -101,6 +104,10 @@ public class RedisMapState<T> implements IBackingMap<T> {
         return tuple.get(0).toString();
     }
 
+    public static <T> StateFactory build(Option<T> option) {
+        return new RedisStateFactory(option);
+    }
+
     protected static class RedisStateFactory implements StateFactory {
         // state enum
         private StateType _stateType;
@@ -111,6 +118,10 @@ public class RedisMapState<T> implements IBackingMap<T> {
         // redis operate option
         private Option _option;
 
+        public RedisStateFactory(Option _option) {
+            this(_option.getStateType(), _option);
+        }
+
         public RedisStateFactory(StateType _stateType, Option _option) {
             this._stateType = _stateType;
             this._option = _option;
@@ -119,30 +130,23 @@ public class RedisMapState<T> implements IBackingMap<T> {
             if (this._serializer == null) {
                 throw new RuntimeException("can't set serializer for trident state type " + _stateType);
             }
-
-            if (this._option.getJedis() == null) {
-                throw new RuntimeException("can't set redis client for trident state type " + _stateType);
-            }
         }
 
         @Override
         public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            RedisMapState state = new RedisMapState(this._option.getJedis(), this._serializer);
+            RedisMapState state = new RedisMapState(RedisUtils.getRedis(), this._serializer);
             state.registerMetric(conf, metrics);
-
-            // cache List<Object> = KeyTuple and List<Object> = ValueTuple
-            CachedMap cachedMap = new CachedMap(state, this._option.getLocalCacheSize());
 
             MapState mapState;
             switch (this._stateType) {
                 case TRANSACTIONAL:
-                    mapState = TransactionalMap.build(cachedMap);
+                    mapState = TransactionalMap.build(state);
                     break;
                 case NON_TRANSACTIONAL:
-                    mapState = NonTransactionalMap.build(cachedMap);
+                    mapState = NonTransactionalMap.build(state);
                     break;
                 case OPAQUE:
-                    mapState = OpaqueMap.build(cachedMap);
+                    mapState = OpaqueMap.build(state);
                     break;
                 default:
                     throw new RuntimeException("unknown trident state type " + _stateType);

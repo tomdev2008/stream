@@ -1,6 +1,8 @@
 package com.sdu.stream.trident.simple;
 
 import com.google.common.base.Strings;
+import com.sdu.stream.trident.simple.state.Option;
+import com.sdu.stream.trident.simple.state.RedisMapState;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.trident.Stream;
@@ -11,8 +13,8 @@ import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.operation.Function;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
+import org.apache.storm.trident.state.StateType;
 import org.apache.storm.trident.testing.FixedBatchSpout;
-import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -24,15 +26,23 @@ import java.util.Map;
  * */
 public class TridentTopologyBuilder {
 
-    private static FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence"), 3,
-                                                                new Values("the cow jumped over the moon"),
-                                                                new Values("the man went to the store and bought some candy"),
-                                                                new Values("four score and seven years ago"),
-                                                                new Values("how many apples can you eat"));
+    private static final Option<String> option = new Option<>();
 
+    static {
+        option.setLocalCacheSize(10);
+        option.setStateType(StateType.TRANSACTIONAL);
+    }
 
     public static void main(String []args) {
+        // storm spout
+        FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence"), 3,
+                new Values("the cow jumped over the moon"),
+                new Values("the man went to the store and bought some candy"),
+                new Values("four score and seven years ago"),
+                new Values("how many apples can you eat"));
         spout.setCycle(true);
+
+
         TridentTopology tridentTopology = new TridentTopology();
         // zookeeper create 'sentence.spout' node to keep metadata
         Stream sentenceStream = tridentTopology.newStream("sentence.spout", spout);
@@ -65,7 +75,7 @@ public class TridentTopologyBuilder {
         // group by word
         GroupedStream groupStream = wordStream.groupBy(new Fields("word"));
         // aggregate word and persistent
-        TridentState tridentState = groupStream.persistentAggregate(new MemoryMapState.Factory(),
+        TridentState tridentState = groupStream.persistentAggregate(/*new MemoryMapState.Factory()*/ RedisMapState.build(option),
                 new Fields("word"),
                 new CombinerAggregator<Long>() {
                     @Override

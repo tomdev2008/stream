@@ -9,27 +9,27 @@ import java.util.List;
  * */
 public class LocationDb implements State {
 
-    // next location state transaction id
-    private long _bTxId;
+    // current location state transaction id
+    private long _curTxId;
 
-    // current location state update transaction id
-    private long _cTxId;
+    // last location state update transaction id
+    private long _lastTxId;
 
     @Override
     public void beginCommit(Long txid) {
-        this._bTxId = txid;
+        this._curTxId = txid;
     }
 
     @Override
     public void commit(Long txid) {
-        this._cTxId = txid;
+        this._lastTxId = txid;
     }
 
     public void setBulkLocation(List<Long> userIds, List<String> locations) {
         // code to access database and set location(check current transaction id value)
         StringBuffer sb = new StringBuffer();
-        sb.append("bTxId=").append(_bTxId).append("\t");
-        sb.append("cTxId=").append(_cTxId).append("\t");
+        sb.append("_curTxId=").append(_curTxId).append("\t");
+        sb.append("_lastTxId=").append(_lastTxId).append("\t");
         sb.append("userLocation=[");
         boolean first = true;
         for (int i = 0; i < userIds.size(); i++) {
