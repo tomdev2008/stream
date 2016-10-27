@@ -61,9 +61,16 @@ public class RedisMapState<T> implements IBackingMap<T> {
             pipeline.sync();
             _redisReadMetric.incrBy(size);
             values.addAll(responses.stream()
-                                    .map(response -> this._serializer.deserialize(response.get()))
+                                    .map(response -> {
+                                        byte[] bytes = response.get();
+                                        if (bytes == null) {
+                                            return null;
+                                        }
+                                        return this._serializer.deserialize(bytes);
+                                    })
                                     .collect(Collectors.toList()));
         } catch (Exception e) {
+            e.printStackTrace();
             _redisExceptionMetric.incr();
         }
         return values;
@@ -73,9 +80,6 @@ public class RedisMapState<T> implements IBackingMap<T> {
     public void multiPut(List<List<Object>> keys, List<T> values) {
         // List<Object> = Tuple
         try {
-            if (keys == null || keys.isEmpty()) {
-                return;
-            }
             int size = keys.size();
             Pipeline pipeline = _jedis.pipelined();
             for (int i = 0; i < size; i++) {

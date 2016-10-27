@@ -1,6 +1,7 @@
 package com.sdu.stream.trident.simple;
 
 import com.google.common.base.Strings;
+import com.sdu.stream.trident.simple.func.LongCombinerAggregator;
 import com.sdu.stream.trident.simple.state.Option;
 import com.sdu.stream.trident.simple.state.RedisMapState;
 import org.apache.storm.Config;
@@ -9,7 +10,6 @@ import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.fluent.GroupedStream;
-import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.operation.Function;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
@@ -76,23 +76,7 @@ public class TridentTopologyBuilder {
         GroupedStream groupStream = wordStream.groupBy(new Fields("word"));
         // aggregate word and persistent
         TridentState tridentState = groupStream.persistentAggregate(/*new MemoryMapState.Factory()*/ RedisMapState.build(option),
-                new Fields("word"),
-                new CombinerAggregator<Long>() {
-                    @Override
-                    public Long init(TridentTuple tuple) {
-                        return 1L;
-                    }
-
-                    @Override
-                    public Long combine(Long val1, Long val2) {
-                        return val1 + val2;
-                    }
-
-                    @Override
-                    public Long zero() {
-                        return 0L;
-                    }
-                },
+                new Fields("word"), new LongCombinerAggregator(),
                 new Fields("count"));
         // parallelism
         tridentState = tridentState.parallelismHint(6);
