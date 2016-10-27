@@ -1,6 +1,5 @@
 package com.sdu.stream.trident.custom;
 
-import com.sdu.stream.trident.custom.option.LocationUpdater;
 import com.sdu.stream.trident.custom.spout.LocationSpout;
 import com.sdu.stream.trident.custom.state.LocationDbFactory;
 import org.apache.storm.Config;
@@ -8,6 +7,8 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.trident.operation.ReducerAggregator;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
@@ -29,13 +30,26 @@ public class LocationTridentTopology {
     public static void main(String[] args) {
         TridentTopology topology = new TridentTopology();
         Stream locationStream = topology.newStream("locations", new LocationSpout(2, fields, outputs));
-        TridentState tridentState = locationStream.partitionPersist(new LocationDbFactory(), fields, new LocationUpdater());
+//        TridentState tridentState = locationStream.partitionPersist(new LocationDbFactory(), fields, new LocationUpdater());
+
+        TridentState tridentState = locationStream.persistentAggregate(new LocationDbFactory(), fields, new ReducerAggregator() {
+            @Override
+            public Object init() {
+                return null;
+            }
+
+            @Override
+            public Object reduce(Object curr, TridentTuple tuple) {
+                return null;
+            }
+        }, new Fields("locations"));
 
         // start topology locally
         Config conf = new Config();
         conf.setDebug(false);
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("tridentTopology", conf, topology.build());
+
     }
 
 }

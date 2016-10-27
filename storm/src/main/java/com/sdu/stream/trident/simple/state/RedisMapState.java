@@ -130,6 +130,7 @@ public class RedisMapState<T> implements IBackingMap<T> {
             RedisMapState state = new RedisMapState(this._option.getJedis(), this._serializer);
             state.registerMetric(conf, metrics);
 
+            // cache List<Object> = KeyTuple and List<Object> = ValueTuple
             CachedMap cachedMap = new CachedMap(state, this._option.getLocalCacheSize());
 
             MapState mapState;

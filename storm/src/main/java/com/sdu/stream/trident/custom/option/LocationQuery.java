@@ -10,8 +10,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Created by hanhan.zhang on 16/10/26.
- */
+ * Location Query
+ *
+ * @author hanhan.zhang
+ * */
 public class LocationQuery extends BaseQueryFunction<LocationDb, String>{
 
     @Override
