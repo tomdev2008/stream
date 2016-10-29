@@ -1,6 +1,6 @@
-package com.sdu.stream.kafka.simple.topology;
+package com.sdu.stream.topology.kafka;
 
-import com.sdu.stream.kafka.simple.bolt.SentenceSplitBaseBolt;
+import com.sdu.stream.topology.kafka.bolt.SentenceSplitBaseBolt;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;

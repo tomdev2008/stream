@@ -1,4 +1,4 @@
-package com.sdu.stream.kafka.simple.bolt;
+package com.sdu.stream.topology.kafka.bolt;
 
 import com.google.common.base.Strings;
 import org.apache.storm.metric.api.CountMetric;
