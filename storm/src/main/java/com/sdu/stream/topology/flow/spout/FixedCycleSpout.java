@@ -109,7 +109,7 @@ public class FixedCycleSpout implements IRichSpout {
     @Override
     public void ack(Object msgId) {
         String msgIdStr = (String) msgId;
-        System.out.println("ack tuple with msgId " + msgIdStr);
+//        System.out.println("ack tuple with msgId " + msgIdStr);
         this._pendingTuple.remove(msgIdStr);
     }
 
