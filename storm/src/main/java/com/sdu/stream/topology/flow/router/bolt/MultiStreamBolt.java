@@ -47,7 +47,7 @@ public class MultiStreamBolt extends BaseRichBolt {
         }
         streamDescList.forEach(streamDesc -> {
             if (streamDesc.interest(str)) {
-                this._collector.emit(input, new Values(str));
+                this._collector.emit(streamDesc.getStreamId(), input, new Values(str));
             }
         });
     }

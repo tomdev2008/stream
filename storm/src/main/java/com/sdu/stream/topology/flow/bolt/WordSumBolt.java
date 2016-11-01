@@ -8,6 +8,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -20,23 +22,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  * */
 public class WordSumBolt extends BaseRichBolt {
 
-    private OutputCollector _collector;
+    private static final Logger LOGGER = LoggerFactory.getLogger(WordSumBolt.class);
 
-    private int _taskId;
+    private OutputCollector _collector;
 
     private Cache<String, AtomicInteger> _wordCache;
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this._collector = collector;
-        this._taskId = context.getThisTaskId();
         this._wordCache = CacheBuilder.newBuilder()
                                         .maximumSize(1024)
                                         .expireAfterWrite(3, TimeUnit.SECONDS)
                                         .removalListener((removalNotification) -> {
                                             String key = (String) removalNotification.getKey();
                                             AtomicInteger sum = (AtomicInteger) removalNotification.getValue();
-                                            System.out.println("word sum result : [" + key + "," + sum.get() + "]");
+                                            LOGGER.info("word sum result : [{} , {}]", key, sum.get());
                                         })
                                         .build();
     }

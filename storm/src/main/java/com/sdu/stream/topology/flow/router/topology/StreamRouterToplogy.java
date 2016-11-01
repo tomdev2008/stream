@@ -24,8 +24,8 @@ public class StreamRouterToplogy {
         // send tuple
         List<Object>[]tuple = new List[] {new Values("request: request log from ip 192.12.1.67"),
                                             new Values("request: request log from ip 192.124.13.69"),
-                                            new Values("response: response log from ip 10.124.13.69"),
-                                            new Values("response: response log from ip 10.124.13.69")};
+                                            new Values("response: response log from ip 80.127.13.69"),
+                                            new Values("response: response log from ip 10.126.13.69")};
 
 
 
@@ -44,8 +44,8 @@ public class StreamRouterToplogy {
 
         // bolt
         MultiStreamBolt multiStreamBolt = new MultiStreamBolt(false, streamDescs, new Fields("log"));
-        OutputBolt requestPrintBolt = new OutputBolt(requestStreamId);
-        OutputBolt responsePrintBolt = new OutputBolt(responseStreamId);
+        OutputBolt requestPrintBolt = new OutputBolt(requestStreamId, false);
+        OutputBolt responsePrintBolt = new OutputBolt(responseStreamId, true);
 
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         topologyBuilder.setSpout ("log.cycle.spout", cycleSpout, 1);
@@ -59,6 +59,7 @@ public class StreamRouterToplogy {
                         .shuffleGrouping("multiple.stream.bolt", responseStreamId);
 
         Config config = new Config();
+        config.setDebug(false);
 
         LocalCluster localCluster = new LocalCluster();
         localCluster.submitTopology("multiSteamRouteTopology", config, topologyBuilder.createTopology());

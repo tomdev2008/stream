@@ -9,6 +9,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,8 @@ import java.util.UUID;
  * @author hanhan.zhang
  * */
 public class FixedCycleSpout implements IRichSpout {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FixedCycleSpout.class);
 
     private String _fieldName;
 
@@ -109,7 +113,7 @@ public class FixedCycleSpout implements IRichSpout {
     @Override
     public void ack(Object msgId) {
         String msgIdStr = (String) msgId;
-//        System.out.println("ack tuple with msgId " + msgIdStr);
+        LOGGER.debug("ack tuple message id {} .", msgIdStr);
         this._pendingTuple.remove(msgIdStr);
     }
 
@@ -117,7 +121,7 @@ public class FixedCycleSpout implements IRichSpout {
     public void fail(Object msgId) {
         this._failMetric.incr();
         String msgIdStr = (String) msgId;
-        System.out.println("fail tuple with msgId " + msgIdStr);
+        LOGGER.debug("fail tuple message id {} .", msgIdStr);
         sendTuple(msgIdStr, this._pendingTuple.get(msgIdStr));
     }
 
@@ -140,7 +144,7 @@ public class FixedCycleSpout implements IRichSpout {
             this._consumeTaskIdList.forEach(taskId ->
                     this._collector.emitDirect(taskId, this._streamId, tuple, msgId));
         } else {
-            this._collector.emit(tuple, msgId);
+            this._collector.emit(this._streamId, tuple, msgId);
         }
     }
 }

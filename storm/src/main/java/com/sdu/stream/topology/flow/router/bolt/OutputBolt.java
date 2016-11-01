@@ -6,6 +6,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -16,12 +18,17 @@ import java.util.Map;
  * */
 public class OutputBolt extends BaseRichBolt {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(OutputBolt.class);
+
     private OutputCollector _collector;
 
     private String _interestStream;
 
-    public OutputBolt(String _interestStream) {
+    private boolean _debug;
+
+    public OutputBolt(String _interestStream, boolean _debug) {
         this._interestStream = _interestStream;
+        this._debug = _debug;
     }
 
     @Override
@@ -35,7 +42,11 @@ public class OutputBolt extends BaseRichBolt {
         if (Strings.isEmpty(str)) {
             return;
         }
-        System.out.println("Interest Stream '" + _interestStream + "', Receive Input : " + str);
+        if (this._debug) {
+            LOGGER.info("Interest Stream {} , Receive Input : {} " , this._interestStream, str);
+//            System.out.println("Interest Stream '" + _interestStream + "', Receive Input : " + str);
+        }
+        this._collector.ack(input);
     }
 
     @Override
