@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Storm Task Scheduler()
+ * Storm Task Scheduler(storm.scheduler=DirectSchedule)
  *
  * @author hanhan.zhang
  * */
