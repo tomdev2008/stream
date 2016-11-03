@@ -16,9 +16,9 @@ import java.util.Map;
  *
  * @author hanhan.zhang
  * */
-public class OutputBolt extends BaseRichBolt {
+public class StreamPrintBolt extends BaseRichBolt {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OutputBolt.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamPrintBolt.class);
 
     private OutputCollector _collector;
 
@@ -26,7 +26,7 @@ public class OutputBolt extends BaseRichBolt {
 
     private boolean _debug;
 
-    public OutputBolt(String _interestStream, boolean _debug) {
+    public StreamPrintBolt(String _interestStream, boolean _debug) {
         this._interestStream = _interestStream;
         this._debug = _debug;
     }

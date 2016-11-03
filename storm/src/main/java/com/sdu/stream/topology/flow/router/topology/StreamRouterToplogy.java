@@ -2,7 +2,7 @@ package com.sdu.stream.topology.flow.router.topology;
 
 import com.google.common.collect.Lists;
 import com.sdu.stream.topology.flow.router.bolt.MultiStreamBolt;
-import com.sdu.stream.topology.flow.router.bolt.OutputBolt;
+import com.sdu.stream.topology.flow.router.bolt.StreamPrintBolt;
 import com.sdu.stream.topology.flow.router.help.StreamDesc;
 import com.sdu.stream.topology.flow.spout.FixedCycleSpout;
 import org.apache.storm.Config;
@@ -36,16 +36,26 @@ public class StreamRouterToplogy {
         String requestFlag = "request";
         String responseStreamId = "topology.response.stream";
         String responseFlag = "response";
-        List<StreamDesc> streamDescs = Lists.newArrayList(StreamDesc.builder().streamId(requestStreamId).flag(requestFlag).build(),
-                                                          StreamDesc.builder().streamId(responseStreamId).flag(responseFlag).build());
+        List<StreamDesc> streamDescs = Lists.newArrayList(StreamDesc.builder()
+                                                                    .streamId(requestStreamId)
+                                                                    .flag(requestFlag)
+                                                                    .direct(false)
+                                                                    .fields(new Fields("log"))
+                                                                    .build(),
+                                                          StreamDesc.builder()
+                                                                    .streamId(responseStreamId)
+                                                                    .flag(responseFlag)
+                                                                    .direct(false)
+                                                                    .fields(new Fields("log"))
+                                                                  .build());
 
         // spout
         FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, "log", false, tuple);
 
         // bolt
-        MultiStreamBolt multiStreamBolt = new MultiStreamBolt(false, streamDescs, new Fields("log"));
-        OutputBolt requestPrintBolt = new OutputBolt(requestStreamId, false);
-        OutputBolt responsePrintBolt = new OutputBolt(responseStreamId, true);
+        MultiStreamBolt multiStreamBolt = new MultiStreamBolt(streamDescs);
+        StreamPrintBolt requestPrintBolt = new StreamPrintBolt(requestStreamId, false);
+        StreamPrintBolt responsePrintBolt = new StreamPrintBolt(responseStreamId, true);
 
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         topologyBuilder.setSpout ("log.cycle.spout", cycleSpout, 1);

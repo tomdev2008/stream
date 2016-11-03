@@ -1,12 +1,13 @@
 package com.sdu.stream.topology.flow.router.bolt;
 
+import com.google.common.collect.Lists;
 import com.sdu.stream.topology.flow.router.help.StreamDesc;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.storm.generated.Grouping;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
@@ -22,21 +23,37 @@ public class MultiStreamBolt extends BaseRichBolt {
 
     private OutputCollector _collector;
 
-    private boolean _direct;
+    private List<StreamDesc> _streamDescList;
 
-    private List<StreamDesc> streamDescList;
+    // task set consume the bolt
+    protected List<Integer> _consumeExecutorTaskList;
 
-    private Fields _fields;
-
-    public MultiStreamBolt(boolean _direct, List<StreamDesc> streamDescList, Fields _fields) {
-        this._direct = _direct;
-        this.streamDescList = streamDescList;
-        this._fields = _fields;
+    public MultiStreamBolt(List<StreamDesc> streamDescList) {
+        this._streamDescList = streamDescList;
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this._collector = collector;
+
+        // get consume executor task id
+        Map<String, Map<String, Grouping>> consumeTaskMap = context.getThisTargets();
+        consumeTaskMap.forEach((streamId, consumeTarget) -> {
+            if (consumeTarget != null && !consumeTarget.isEmpty()) {
+                consumeTarget.forEach((componentId, group) -> {
+                    if (group.is_set_direct() && Strings.isNotEmpty(componentId)) {
+                        List<Integer> executorTaskIdList = context.getComponentTasks(componentId);
+                        if (executorTaskIdList == null || executorTaskIdList.isEmpty()) {
+                            throw new IllegalStateException("component '" + componentId + "' executor is zero !");
+                        }
+                        if (this._consumeExecutorTaskList == null) {
+                            this._consumeExecutorTaskList = Lists.newLinkedList();
+                        }
+                        this._consumeExecutorTaskList.addAll(executorTaskIdList);
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -45,17 +62,22 @@ public class MultiStreamBolt extends BaseRichBolt {
         if (Strings.isEmpty(str)) {
             return;
         }
-        streamDescList.forEach(streamDesc -> {
+        this._streamDescList.forEach(streamDesc -> {
             if (streamDesc.interest(str)) {
-                this._collector.emit(streamDesc.getStreamId(), input, new Values(str));
+                if (streamDesc.isDirect()) {
+                    this._consumeExecutorTaskList.forEach(executorTaskId ->
+                            this._collector.emitDirect(executorTaskId, streamDesc.getStreamId(), input, new Values(str)));
+                } else {
+                    this._collector.emit(streamDesc.getStreamId(), input, new Values(str));
+                }
             }
         });
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        streamDescList.forEach(streamDesc ->
-            declarer.declareStream(streamDesc.getStreamId(), this._direct, this._fields)
+        this._streamDescList.forEach(streamDesc ->
+            declarer.declareStream(streamDesc.getStreamId(), streamDesc.isDirect(), streamDesc.getFields())
         );
     }
 }
