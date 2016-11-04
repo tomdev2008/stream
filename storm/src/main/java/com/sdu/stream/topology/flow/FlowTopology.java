@@ -21,6 +21,11 @@ public class FlowTopology {
 
     public static void main(String[] args) {
 
+        // config storm.yaml
+        System.setProperty("storm.conf.file", "storm/storm.yaml");
+
+//        Utils.readStormConfig();
+
         // send tuple
         List<Object> []tuple = new List[] {new Values("the cow jumped over the moon"),
                                             new Values("the man went to the store and bought some candy"),
@@ -49,6 +54,7 @@ public class FlowTopology {
                         .fieldsGrouping("sentence.split.bolt", splitStreamId, new Fields("word"));
 
         Config config = new Config();
+        config.setDebug(true);
         config.put(Const.SEPARATOR, " ");
 
         LocalCluster localCluster = new LocalCluster();

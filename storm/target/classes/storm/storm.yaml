@@ -1,0 +1,3 @@
+storm.scheduler: "com.sdu.stream.scheduler.DirectSchedule"
+supervisor.scheduler.meta:
+  name: "local-supervisor"

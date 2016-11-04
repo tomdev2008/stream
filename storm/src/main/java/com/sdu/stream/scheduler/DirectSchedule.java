@@ -1,5 +1,6 @@
 package com.sdu.stream.scheduler;
 
+import com.sdu.stream.utils.CollectionUtil;
 import com.sdu.stream.utils.Const;
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.*;
@@ -31,9 +32,9 @@ public class DirectSchedule implements IScheduler {
     @Override
     public void prepare(Map conf) {
         this._debug = (boolean) conf.get(Config.TOPOLOGY_DEBUG);
-        this._useDefault = (boolean) conf.get(Const.STORM_USE_DEFALUT_SCHEDULE);
-        this._occupy = (boolean) conf.get(Const.SUPERVISOR_SLOT_OCCUPY);
-        this._occupyPort = (int) conf.get(Const.SUPERVISOR_SLOT_OCCUPY_PORT);
+        this._useDefault = (boolean) conf.getOrDefault(Const.STORM_USE_DEFAULT_SCHEDULE, false);
+        this._occupy = (boolean) conf.getOrDefault(Const.SUPERVISOR_SLOT_OCCUPY, true);
+        this._occupyPort = (int) conf.getOrDefault(Const.SUPERVISOR_SLOT_OCCUPY_PORT, 6792);
     }
 
     @Override
@@ -44,7 +45,9 @@ public class DirectSchedule implements IScheduler {
         } else {
             LOGGER.info("start to use storm topology direct schedule !");
             Collection<TopologyDetails> topologyDetails = topologies.getTopologies();
-            topologyDetails.forEach(topologyDetail -> this.scheduleTopology(cluster, topologyDetail));
+            if (CollectionUtil.isNotEmpty(topologyDetails)) {
+                topologyDetails.forEach(topologyDetail -> this.scheduleTopology(cluster, topologyDetail));
+            }
         }
     }
 

@@ -9,7 +9,7 @@ public class Const {
 
     public static final String SEPARATOR = "separator";
 
-    public static final String STORM_USE_DEFALUT_SCHEDULE = "storm.use.default.schedule";
+    public static final String STORM_USE_DEFAULT_SCHEDULE = "storm.use.default.schedule";
 
     public static final String SUPERVISOR_SLOT_OCCUPY = "supervisor.slot.occupy";
 
