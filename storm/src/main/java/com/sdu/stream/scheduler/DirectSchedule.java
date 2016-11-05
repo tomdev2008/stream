@@ -3,7 +3,6 @@ package com.sdu.stream.scheduler;
 import com.sdu.stream.utils.CollectionUtil;
 import com.sdu.stream.utils.Const;
 import com.sdu.stream.utils.MapUtil;
-import org.apache.storm.Config;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.Maps;
@@ -21,13 +20,10 @@ public class DirectSchedule implements IScheduler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectSchedule.class);
 
-    private boolean _debug;
-
     private boolean _useDefault;
 
     @Override
     public void prepare(Map conf) {
-        this._debug = (boolean) conf.get(Config.TOPOLOGY_DEBUG);
         this._useDefault = (boolean) conf.getOrDefault(Const.STORM_USE_DEFAULT_SCHEDULE, false);
     }
 
@@ -54,7 +50,7 @@ public class DirectSchedule implements IScheduler {
         } else {
             String topologyName = topologyDetail.getName();
             SchedulerAssignment schedulerAssignment = cluster.getAssignmentById(topologyDetail.getId());
-            if(schedulerAssignment != null && this._debug) {
+            if(schedulerAssignment != null) {
                 Map<ExecutorDetails, WorkerSlot> executorToWorkerSlots = schedulerAssignment.getExecutorToSlot();
                 if (MapUtil.isNotEmpty(executorToWorkerSlots)) {
                     StringBuffer sb = new StringBuffer();
@@ -69,7 +65,7 @@ public class DirectSchedule implements IScheduler {
                             sb.append(",").append(executorDetail.toString()).append("-->").append("[").append(workSlot.toString()).append("]");
                         }
                     }
-                    LOGGER.debug("topology '{}' already schedule, schedule message : {} .", topologyName, sb.toString());
+                    LOGGER.info("topology '{}' already schedule, schedule message : {} .", topologyName, sb.toString());
                 }
             }
 
@@ -104,10 +100,7 @@ public class DirectSchedule implements IScheduler {
         int parallelism = topologyDetail.getExecutors().size() / actualNeedNumWorkers;
         Map<WorkerSlot, Map<String, List<ExecutorDetails>>> executorToWorker = assignExecutorToWorker(parallelism, assignWorkerSlots, componentToExecutorDetails);
         executorToWorker.forEach(((workerSlot, componentToExecutors) -> {
-            if (this._debug) {
-                this.printScheduleMessage(topologyDetail.getName(), cluster, workerSlot, componentToExecutors);
-            }
-
+            this.printScheduleMessage(topologyDetail.getName(), cluster, workerSlot, componentToExecutors);
             List<ExecutorDetails> executors = Lists.newLinkedList();
             componentToExecutors.forEach((component, executorDetails) -> executors.addAll(executorDetails));
 
@@ -154,14 +147,12 @@ public class DirectSchedule implements IScheduler {
 
     protected void printScheduleMessage(String topology, Cluster cluster, WorkerSlot workerSlot, Map<String, List<ExecutorDetails>> componentToExecutors) {
         SupervisorDetails supervisorDetails = cluster.getSupervisorById(workerSlot.getNodeId());
-        Map meta = (Map) supervisorDetails.getMeta();
         String supervisorNode = supervisorDetails.getHost();
-        String supervisorName = (String) meta.get("name");
         int port = workerSlot.getPort();
-        String supervisor = new StringBuffer().append("[name:").append(supervisorName).append(",address:").append(supervisorNode).append(":").append(port).append("]").toString();
+        String supervisor = new StringBuffer().append("[address=").append(supervisorNode).append(":").append(port).append("]").toString();
         componentToExecutors.forEach((component, executorDetails) -> {
-            LOGGER.debug("executor '{}' of component '{}' of topology '{}' schedule to supervisor : {}",
-                    executorDetails, component, topology, supervisor);
+            LOGGER.info("[topology:{}, component:{}, executor:{} schedule to supervisor : {}",
+                    topology, component, executorDetails, supervisor);
         });
     }
 }
