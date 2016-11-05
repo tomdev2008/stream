@@ -1,3 +1,5 @@
 storm.scheduler: "com.sdu.stream.scheduler.DirectSchedule"
+topology.debug: true
+storm.use.default.schedule: false
 supervisor.scheduler.meta:
   name: "local-supervisor"

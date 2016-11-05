@@ -2,15 +2,15 @@ package com.sdu.stream.scheduler;
 
 import com.sdu.stream.utils.CollectionUtil;
 import com.sdu.stream.utils.Const;
+import com.sdu.stream.utils.MapUtil;
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.*;
+import org.apache.storm.shade.com.google.common.collect.Lists;
+import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Storm Task Scheduler(storm.scheduler=DirectSchedule)
@@ -25,16 +25,10 @@ public class DirectSchedule implements IScheduler {
 
     private boolean _useDefault;
 
-    private boolean _occupy;
-
-    private int _occupyPort;
-
     @Override
     public void prepare(Map conf) {
         this._debug = (boolean) conf.get(Config.TOPOLOGY_DEBUG);
         this._useDefault = (boolean) conf.getOrDefault(Const.STORM_USE_DEFAULT_SCHEDULE, false);
-        this._occupy = (boolean) conf.getOrDefault(Const.SUPERVISOR_SLOT_OCCUPY, true);
-        this._occupyPort = (int) conf.getOrDefault(Const.SUPERVISOR_SLOT_OCCUPY_PORT, 6792);
     }
 
     @Override
@@ -56,32 +50,29 @@ public class DirectSchedule implements IScheduler {
         if (needsScheduling) {
             LOGGER.info("start to allocate resource for topology '{}' !", topologyDetail.getName());
             Map<String, List<ExecutorDetails>> componentToExecutors = cluster.getNeedsSchedulingComponentToExecutors(topologyDetail);
-
-            if (this._debug) {
-                componentToExecutors.forEach((componentId, executorDetails) -> {
-                    String msg = this.collectionToString(executorDetails, ",");
-                    LOGGER.debug("component '{}' need to allocate executor : {} .", componentId, msg);
-                });
-            }
-
-            SchedulerAssignment schedulerAssignment = cluster.getAssignmentById(topologyDetail.getId());
-            if (schedulerAssignment != null) {
-                if (this._debug) {
-                    Map<ExecutorDetails, WorkerSlot> executorToWorkerSlots = schedulerAssignment.getExecutorToSlot();
-                    if (executorToWorkerSlots != null && !executorToWorkerSlots.isEmpty()) {
-                        executorToWorkerSlots.forEach((executorDetail, workerSlot) ->
-                                LOGGER.debug("executor '{}' allocate to worker '{}:{}' .", executorDetail,
-                                        workerSlot.getNodeId(), workerSlot.getPort())
-                        );
-                    }
-                }
-            } else {
-                // schedule component
-                this.scheduleComponent(cluster, topologyDetail, componentToExecutors);
-            }
-
+            this.scheduleComponent(cluster, topologyDetail, componentToExecutors);
         } else {
             String topologyName = topologyDetail.getName();
+            SchedulerAssignment schedulerAssignment = cluster.getAssignmentById(topologyDetail.getId());
+            if(schedulerAssignment != null && this._debug) {
+                Map<ExecutorDetails, WorkerSlot> executorToWorkerSlots = schedulerAssignment.getExecutorToSlot();
+                if (MapUtil.isNotEmpty(executorToWorkerSlots)) {
+                    StringBuffer sb = new StringBuffer();
+                    boolean first = true;
+                    for (Map.Entry<ExecutorDetails, WorkerSlot> entry : executorToWorkerSlots.entrySet()) {
+                        ExecutorDetails executorDetail = entry.getKey();
+                        WorkerSlot workSlot = entry.getValue();
+                        if (first) {
+                            sb.append(executorDetail.toString()).append("-->").append("[").append(workSlot.toString()).append("]");
+                            first = false;
+                        } else {
+                            sb.append(",").append(executorDetail.toString()).append("-->").append("[").append(workSlot.toString()).append("]");
+                        }
+                    }
+                    LOGGER.debug("topology '{}' already schedule, schedule message : {} .", topologyName, sb.toString());
+                }
+            }
+
             LOGGER.info("topology '{}' already schedule and don't schedule again !", topologyName);
         }
     }
@@ -89,67 +80,88 @@ public class DirectSchedule implements IScheduler {
     protected void scheduleComponent(Cluster cluster, TopologyDetails topologyDetail, Map<String, List<ExecutorDetails>> componentToExecutorDetails) {
         Collection<SupervisorDetails> supervisors = cluster.getSupervisors().values();
 
-        componentToExecutorDetails.forEach((component, executorDetail) -> {
-            LOGGER.info("start allocate executor for component '{}' !", component);
-
-            supervisors.forEach(supervisorDetail -> {
-                Map meta = (Map) supervisorDetail.getSchedulerMeta();
-                /**
-                 * supervisor.scheduler.meta :
-                 * name : 'supervisorName'
-                 * */
-                String supervisorName = (String) meta.get("name");
-                String supervisorId = supervisorDetail.getId();
-                Double memory = supervisorDetail.getTotalMemory();
-                Double cpu = supervisorDetail.getTotalCPU();
-                Set<Integer> assignablePorts = supervisorDetail.getAllPorts();
-                List<WorkerSlot> availableSlots = cluster.getAvailableSlots(supervisorDetail);
-                String assignPortMsg = collectionToString(assignablePorts, ",");
-                if (availableSlots.isEmpty()) {
-                    if(this._debug) {
-                        LOGGER.debug("supervisor [{}-{}] allocate memory {} MB and {} CPU and occupy port {}, but now available port is zero !",
-                                supervisorId, supervisorName, memory, cpu, assignPortMsg);
+        // assign worker
+        int desiredNumWorkers = topologyDetail.getNumWorkers();
+        int assignNumWorkers = cluster.getAssignedNumWorkers(topologyDetail);
+        int actualNeedNumWorkers = desiredNumWorkers - assignNumWorkers;
+        List<WorkerSlot> assignWorkerSlots = Lists.newArrayListWithCapacity(actualNeedNumWorkers);
+        supervisors.forEach(supervisorDetail -> {
+            if (assignWorkerSlots.size() == actualNeedNumWorkers) {
+                return;
+            }
+            Set<Integer> availableSlots = cluster.getAvailablePorts(supervisorDetail);
+            if (CollectionUtil.isNotEmpty(availableSlots)) {
+                availableSlots.forEach(availablePort -> {
+                    if (assignWorkerSlots.size() == actualNeedNumWorkers) {
+                        return;
                     }
-                    // occupy used port
-                    if (this._occupy) {
-                        Set<Integer> usedPorts = cluster.getUsedPorts(supervisorDetail);
-                        usedPorts.forEach(usedPort -> {
-                            if (usedPort == this._occupyPort) {
-                                LOGGER.info("supervisor [{}-{}] free used port {} !", supervisorId, supervisorName, usedPort);
-                                cluster.freeSlot(new WorkerSlot(supervisorId, usedPort));
-                            }
-                        });
-                    }
-                }
-
-                availableSlots = cluster.getAvailableSlots(supervisorDetail);
-                String availablePortMsg = collectionToString(availableSlots, ",");
-
-                if (this._debug) {
-                    LOGGER.info("supervisor [{}-{}] allocate memory {} MB and {} CPU and occupy port {}, available port : {} !",
-                            supervisorId, supervisorName, memory, cpu, assignPortMsg, availablePortMsg);
-                }
-
-                cluster.assign(availableSlots.get(0), topologyDetail.getId(), executorDetail);
-            });
+                    assignWorkerSlots.add(new WorkerSlot(supervisorDetail.getId(), availablePort));
+                });
+            }
         });
+
+        // assign thread(executor) for worker
+        int parallelism = topologyDetail.getExecutors().size() / actualNeedNumWorkers;
+        Map<WorkerSlot, Map<String, List<ExecutorDetails>>> executorToWorker = assignExecutorToWorker(parallelism, assignWorkerSlots, componentToExecutorDetails);
+        executorToWorker.forEach(((workerSlot, componentToExecutors) -> {
+            if (this._debug) {
+                this.printScheduleMessage(topologyDetail.getName(), cluster, workerSlot, componentToExecutors);
+            }
+
+            List<ExecutorDetails> executors = Lists.newLinkedList();
+            componentToExecutors.forEach((component, executorDetails) -> executors.addAll(executorDetails));
+
+            cluster.assign(workerSlot, topologyDetail.getId(), executors);
+        }));
     }
 
-    protected <T> String collectionToString(Collection<T> collection, String separator) {
-        if (collection == null || collection.isEmpty()) {
-            return "";
-        }
-        boolean first = true;
-        StringBuffer sb = new StringBuffer();
-        for (T item : collection) {
-            if (first) {
-                sb.append("{").append(item);
-                first = false;
-            } else {
-                sb.append(separator).append(item);
+    protected Map<WorkerSlot, Map<String, List<ExecutorDetails>>> assignExecutorToWorker(int parallelism, List<WorkerSlot> workerSlots, Map<String, List<ExecutorDetails>> componentToExecutorDetails) {
+        Map<WorkerSlot, Map<String, List<ExecutorDetails>>> executorToWorker = Maps.newHashMapWithExpectedSize(workerSlots.size());
+
+        Map<String, List<ExecutorDetails>> remainMap = Maps.newHashMap();
+        for (WorkerSlot workerSlot : workerSlots) {
+            Map<String, List<ExecutorDetails>> result = Maps.newHashMap();
+            if (MapUtil.isNotEmpty(remainMap)) {
+                result.putAll(remainMap);
             }
+            int remainSize = parallelism - result.size();
+            if (remainSize <= 0) {
+                executorToWorker.put(workerSlot, result);
+                break;
+            }
+
+            Iterator<Map.Entry<String, List<ExecutorDetails>>> it = componentToExecutorDetails.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, List<ExecutorDetails>> entry = it.next();
+                String component = entry.getKey();
+                List<ExecutorDetails> executorDetails = entry.getValue();
+                if (executorDetails.size() > remainSize) {
+                    remainMap.put(component, executorDetails.subList(remainSize, executorDetails.size()));
+                    result.put(component, executorDetails.subList(0, remainSize));
+                    executorToWorker.put(workerSlot, result);
+                    it.remove();
+                    break;
+                } else {
+                    remainSize = remainSize - executorDetails.size();
+                    result.put(component, executorDetails);
+                    it.remove();
+                }
+            }
+            executorToWorker.put(workerSlot, result);
         }
-        sb.append("}");
-        return sb.toString();
+        return executorToWorker;
+    }
+
+    protected void printScheduleMessage(String topology, Cluster cluster, WorkerSlot workerSlot, Map<String, List<ExecutorDetails>> componentToExecutors) {
+        SupervisorDetails supervisorDetails = cluster.getSupervisorById(workerSlot.getNodeId());
+        Map meta = (Map) supervisorDetails.getMeta();
+        String supervisorNode = supervisorDetails.getHost();
+        String supervisorName = (String) meta.get("name");
+        int port = workerSlot.getPort();
+        String supervisor = new StringBuffer().append("[name:").append(supervisorName).append(",address:").append(supervisorNode).append(":").append(port).append("]").toString();
+        componentToExecutors.forEach((component, executorDetails) -> {
+            LOGGER.debug("executor '{}' of component '{}' of topology '{}' schedule to supervisor : {}",
+                    executorDetails, component, topology, supervisor);
+        });
     }
 }
