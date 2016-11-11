@@ -5,7 +5,7 @@ import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.TimeoutHandler;
-import com.sdu.stream.communicate.thread.disruptor.share.SortEvent;
+import com.sdu.stream.communicate.thread.disruptor.share.PredictEvent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -21,21 +21,18 @@ import java.util.Random;
  * @author hanhan.zhang
  * */
 @Slf4j
-public class FeatureLoader implements EventHandler<SortEvent>, LifecycleAware, TimeoutHandler {
-
-    private String _name;
+public class FeatureLoader implements EventHandler<PredictEvent>, LifecycleAware, TimeoutHandler {
 
     private String []_featureNames;
 
     private static final Random _random = new Random();
 
-    public FeatureLoader(String _name, String[] _featureNames) {
-        this._name = _name;
+    public FeatureLoader(String[] _featureNames) {
         this._featureNames = _featureNames;
     }
 
     @Override
-    public void onEvent(SortEvent event, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(PredictEvent event, long sequence, boolean endOfBatch) throws Exception {
         Map<Integer, Map<String, Double>> featureMap = event.getFeatureMap();
         if (featureMap == null) {
             featureMap = Maps.newLinkedHashMapWithExpectedSize(event.getPredictItems().size());
@@ -62,16 +59,16 @@ public class FeatureLoader implements EventHandler<SortEvent>, LifecycleAware, T
 
     @Override
     public void onStart() {
-        log.info("{} feature loader execute by thread {} ", this._name, Thread.currentThread().getName());
+
     }
 
     @Override
     public void onShutdown() {
-        log.info("thread pool executor shut down !");
+
     }
 
     @Override
     public void onTimeout(long sequence) throws Exception {
-        log.info("{} feature loader handler wait for {} sequence timeout !", this._name, sequence + 1);
+
     }
 }

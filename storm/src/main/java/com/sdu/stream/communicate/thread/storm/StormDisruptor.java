@@ -34,7 +34,7 @@ public class StormDisruptor {
     }
 
     public static void main(String[] args) {
-        StormDisruptorQueue queue = new StormDisruptorQueue("storm", ProducerType.SINGLE, 1024, 2, 20, 5L, new StormEventConsumer());
+        StormDisruptorQueue queue = new StormDisruptorQueue("storm", ProducerType.SINGLE, 1024, 20, 10, 5L, new StormEventConsumer());
 
         while (true) {
             String uuid = UUID.randomUUID().toString();

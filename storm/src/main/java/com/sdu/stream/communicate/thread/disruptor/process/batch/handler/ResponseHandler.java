@@ -3,7 +3,9 @@ package com.sdu.stream.communicate.thread.disruptor.process.batch.handler;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.TimeoutHandler;
-import com.sdu.stream.communicate.thread.disruptor.share.SortEvent;
+import com.sdu.stream.communicate.thread.disruptor.share.PredictEvent;
+import com.sdu.stream.communicate.thread.disruptor.util.PredictResult;
+import com.sdu.stream.communicate.thread.disruptor.util.PredictTracker;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -12,17 +14,18 @@ import lombok.extern.slf4j.Slf4j;
  * @author hanhan.zhang
  * */
 @Slf4j
-public class ResponseHandler implements EventHandler<SortEvent>, LifecycleAware, TimeoutHandler {
+public class ResponseHandler implements EventHandler<PredictEvent>, LifecycleAware, TimeoutHandler {
 
     @Override
-    public void onEvent(SortEvent event, long sequence, boolean endOfBatch) throws Exception {
-        long start = event.getStart();
-        log.info("sort cost : {} ms ", System.currentTimeMillis() - start);
+    public void onEvent(PredictEvent event, long sequence, boolean endOfBatch) throws Exception {
+        long cost = System.currentTimeMillis() - event.getStart();
+        PredictResult predictResult = new PredictResult(cost, sequence, event.getFeatureMap(), event.getPredictItemScoreMap());
+        PredictTracker.addPredictResult(sequence, predictResult);
     }
 
     @Override
     public void onStart() {
-        log.info("response handler execute by thread {} ", Thread.currentThread().getName());
+
     }
 
     @Override
@@ -32,6 +35,6 @@ public class ResponseHandler implements EventHandler<SortEvent>, LifecycleAware,
 
     @Override
     public void onTimeout(long sequence) throws Exception {
-        log.info("response handler wait for {} sequence timeout !", sequence + 1);
+
     }
 }

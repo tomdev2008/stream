@@ -9,9 +9,9 @@ import com.lmax.disruptor.dsl.ProducerType;
 import com.sdu.stream.communicate.thread.disruptor.process.batch.handler.ScoreHandler;
 import com.sdu.stream.communicate.thread.disruptor.process.batch.handler.FeatureLoader;
 import com.sdu.stream.communicate.thread.disruptor.process.batch.handler.ResponseHandler;
-import com.sdu.stream.communicate.thread.disruptor.share.SortEvent;
-import com.sdu.stream.communicate.thread.disruptor.share.SortEventFactory;
-import com.sdu.stream.communicate.thread.disruptor.share.SortRequestProducer;
+import com.sdu.stream.communicate.thread.disruptor.share.PredictEvent;
+import com.sdu.stream.communicate.thread.disruptor.share.PredictEventFactory;
+import com.sdu.stream.communicate.thread.disruptor.share.EventProducer;
 
 import java.util.List;
 import java.util.Random;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author hanhan.zhang
  * */
-public class SortDisruptor {
+public class PredictDisruptor {
 
     private static final Random random = new Random();
 
@@ -38,17 +38,17 @@ public class SortDisruptor {
     public static void main(String[] args) throws Exception {
 
         //单生产者模式
-        Disruptor<SortEvent> disruptor = new Disruptor<>(new SortEventFactory(), 1024, Executors.newCachedThreadPool(), ProducerType.SINGLE, new YieldingWaitStrategy());
+        Disruptor<PredictEvent> disruptor = new Disruptor<>(new PredictEventFactory(), 1024, Executors.newCachedThreadPool(), ProducerType.SINGLE, new YieldingWaitStrategy());
 
         // feature loader
-        EventHandler<SortEvent> ctrFeatureLoader = new FeatureLoader("ctr", new String[]{"ctr_7", "ctr_20", "ctr_30"});
-        EventHandler<SortEvent> cvrFeatureLoader = new FeatureLoader("cvr", new String[]{"cvr_7", "cvr_20", "cvr_30"});
+        EventHandler<PredictEvent> ctrFeatureLoader = new FeatureLoader(new String[]{"ctr_7", "ctr_20", "ctr_30"});
+        EventHandler<PredictEvent> cvrFeatureLoader = new FeatureLoader(new String[]{"cvr_7", "cvr_20", "cvr_30"});
 
         // feature score
-        EventHandler<SortEvent> sortHandler = new ScoreHandler();
+        EventHandler<PredictEvent> sortHandler = new ScoreHandler();
 
         // response
-        EventHandler<SortEvent> response = new ResponseHandler();
+        EventHandler<PredictEvent> response = new ResponseHandler();
 
         // DSL(Use BatchEventProcessor)
         disruptor.handleEventsWith(ctrFeatureLoader, cvrFeatureLoader)
@@ -58,13 +58,14 @@ public class SortDisruptor {
 
         disruptor.start();
 
-        RingBuffer<SortEvent> ringBuffer = disruptor.getRingBuffer();
+
+        RingBuffer<PredictEvent> ringBuffer = disruptor.getRingBuffer();
 
         // producer
-        SortRequestProducer producer = new SortRequestProducer(ringBuffer);
+        EventProducer producer = new EventProducer(ringBuffer);
         while (true) {
             TimeUnit.MILLISECONDS.sleep(200);
-            producer.sort(SortDisruptor.generatePredictItem(10));
+            producer.sort(PredictDisruptor.generatePredictItem(10));
         }
     }
 

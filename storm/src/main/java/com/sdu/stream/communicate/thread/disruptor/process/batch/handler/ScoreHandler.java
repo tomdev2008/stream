@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.TimeoutHandler;
-import com.sdu.stream.communicate.thread.disruptor.share.SortEvent;
+import com.sdu.stream.communicate.thread.disruptor.share.PredictEvent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -15,10 +15,10 @@ import java.util.Map;
  * @author hanhan.zhang
  * */
 @Slf4j
-public class ScoreHandler implements EventHandler<SortEvent>, LifecycleAware, TimeoutHandler {
+public class ScoreHandler implements EventHandler<PredictEvent>, LifecycleAware, TimeoutHandler {
 
     @Override
-    public void onEvent(SortEvent event, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(PredictEvent event, long sequence, boolean endOfBatch) throws Exception {
         Map<Integer, Double> sortMap = Maps.newHashMap();
         event.getFeatureMap().forEach((item, featureMap) -> {
             double score = 0.0;
@@ -32,7 +32,7 @@ public class ScoreHandler implements EventHandler<SortEvent>, LifecycleAware, Ti
 
     @Override
     public void onStart() {
-        log.info("score handler execute by thread {} ", Thread.currentThread().getName());
+
     }
 
     @Override
@@ -42,6 +42,6 @@ public class ScoreHandler implements EventHandler<SortEvent>, LifecycleAware, Ti
 
     @Override
     public void onTimeout(long sequence) throws Exception {
-        log.info("score handler wait for {} sequence timeout !", sequence + 1);
+
     }
 }

@@ -7,14 +7,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sort Result(share data by thread)
+ * Predict Event(share data by thread)
  *
  * @author hanhan.zhang
  * */
 @Setter
 @Getter
-public class SortEvent {
+public class PredictEvent {
 
+    // request sequence
+    private long sequence;
+
+    // start timestamp
     private long start;
 
     // sort list

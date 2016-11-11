@@ -69,7 +69,10 @@ public class StormDisruptorQueue {
         this._flushExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                _threadBatch.forEach((threadId, threadLocalInsert) -> threadLocalInsert.flush(true));
+                _threadBatch.forEach((threadId, threadLocalInsert) -> {
+                    threadLocalInsert.forceBatch();
+                    threadLocalInsert.flush(true);
+                });
             }
         }, flushInterval, flushInterval, TimeUnit.SECONDS);
     }
@@ -174,21 +177,24 @@ public class StormDisruptorQueue {
             this._objectBatch.add(obj);
             // overflow
             if (this._objectBatch.size() >= _inputBatchSize) {
-                boolean flush = false;
-                if (this._overflowBatch.isEmpty()) {
-                    try {
-                        publishDirect(this._objectBatch, false);
-                        this._objectBatch.clear();
-                        flush = true;
-                    } catch (InsufficientCapacityException e) {
+//                boolean flush = false;
+//                if (this._overflowBatch.isEmpty()) {
+//                    try {
+//                        publishDirect(this._objectBatch, false);
+//                        this._objectBatch.clear();
+//                        flush = true;
+//                    } catch (InsufficientCapacityException e) {
+//
+//                    }
+//                }
+//
+//                if (!flush) {
+//                    this._overflowBatch.add(this._objectBatch);
+//                    this._objectBatch = new ArrayList<>(_inputBatchSize);
+//                }
+                this._overflowBatch.add(this._objectBatch);
+                this._objectBatch = new ArrayList<>(_inputBatchSize);
 
-                    }
-                }
-
-                if (!flush) {
-                    this._overflowBatch.add(this._objectBatch);
-                    this._objectBatch = new ArrayList<>(_inputBatchSize);
-                }
             }
         }
 
@@ -209,7 +215,7 @@ public class StormDisruptorQueue {
                 return;
             }
 
-            this.forceBatch();
+            log.info("flush thread {} event batch !", Thread.currentThread().getId());
             try {
                 while (!this._overflowBatch.isEmpty()) {
                     publishDirect(this._overflowBatch.peek(), block);
