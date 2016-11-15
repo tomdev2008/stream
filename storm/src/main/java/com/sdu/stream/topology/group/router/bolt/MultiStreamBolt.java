@@ -1,7 +1,7 @@
-package com.sdu.stream.topology.flow.router.bolt;
+package com.sdu.stream.topology.group.router.bolt;
 
 import com.google.common.collect.Lists;
-import com.sdu.stream.topology.flow.router.help.StreamDesc;
+import com.sdu.stream.topology.group.router.help.StreamDesc;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.task.OutputCollector;

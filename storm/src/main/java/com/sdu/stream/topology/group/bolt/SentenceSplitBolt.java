@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.flow.bolt;
+package com.sdu.stream.topology.group.bolt;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -13,7 +13,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-import scala.util.parsing.combinator.testing.Str;
 
 import java.util.List;
 import java.util.Map;

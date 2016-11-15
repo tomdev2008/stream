@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.flow.bolt;
+package com.sdu.stream.topology.group.bolt;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

@@ -1,10 +1,10 @@
-package com.sdu.stream.topology.flow.router.topology;
+package com.sdu.stream.topology.group.router.topology;
 
 import com.google.common.collect.Lists;
-import com.sdu.stream.topology.flow.router.bolt.MultiStreamBolt;
-import com.sdu.stream.topology.flow.router.bolt.StreamPrintBolt;
-import com.sdu.stream.topology.flow.router.help.StreamDesc;
-import com.sdu.stream.topology.flow.spout.FixedCycleSpout;
+import com.sdu.stream.topology.group.router.bolt.MultiStreamBolt;
+import com.sdu.stream.topology.group.router.bolt.StreamPrintBolt;
+import com.sdu.stream.topology.group.router.help.StreamDesc;
+import com.sdu.stream.topology.group.spout.FixedCycleSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.topology.TopologyBuilder;

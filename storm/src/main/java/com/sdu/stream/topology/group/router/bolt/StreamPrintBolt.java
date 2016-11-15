@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.flow.router.bolt;
+package com.sdu.stream.topology.group.router.bolt;
 
 import org.apache.logging.log4j.util.Strings;
 import org.apache.storm.task.OutputCollector;

@@ -1,9 +1,9 @@
-package com.sdu.stream.topology.flow;
+package com.sdu.stream.topology.group;
 
 import com.google.common.collect.Lists;
-import com.sdu.stream.topology.flow.bolt.SentenceSplitBolt;
-import com.sdu.stream.topology.flow.bolt.WordSumBolt;
-import com.sdu.stream.topology.flow.spout.FixedCycleSpout;
+import com.sdu.stream.topology.group.bolt.SentenceSplitBolt;
+import com.sdu.stream.topology.group.bolt.WordSumBolt;
+import com.sdu.stream.topology.group.spout.FixedCycleSpout;
 import com.sdu.stream.utils.Const;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;

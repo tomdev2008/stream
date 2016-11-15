@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.flow.group;
+package com.sdu.stream.topology.group.custom;
 
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.grouping.CustomStreamGrouping;

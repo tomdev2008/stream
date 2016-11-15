@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.flow.spout;
+package com.sdu.stream.topology.group.spout;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
