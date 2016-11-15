@@ -1,4 +1,4 @@
-package com.sdu.stream.trident.simple.state;
+package com.sdu.stream.transaction.trident.simple.state;
 
 import com.google.common.collect.Lists;
 import com.sdu.stream.utils.RedisUtils;

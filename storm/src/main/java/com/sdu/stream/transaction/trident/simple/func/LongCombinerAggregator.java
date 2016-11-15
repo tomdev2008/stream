@@ -1,4 +1,4 @@
-package com.sdu.stream.trident.simple.func;
+package com.sdu.stream.transaction.trident.simple.func;
 
 import com.google.common.base.Strings;
 import org.apache.storm.trident.operation.CombinerAggregator;

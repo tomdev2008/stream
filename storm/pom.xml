@@ -16,6 +16,7 @@
         <storm.version>1.0.2</storm.version>
         <compress.version>1.12</compress.version>
         <thrift.version>0.9.3</thrift.version>
+        <curator.version>3.2.0</curator.version>
         <snakeyaml.version>1.17</snakeyaml.version>
     </properties>
 
@@ -53,6 +54,11 @@
         <dependency>
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
         </dependency>
 
         <dependency>
@@ -132,6 +138,23 @@
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>${jedis.version}</version>
+            </dependency>
+
+            <!-- zookeeper util -->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
         </dependencies>

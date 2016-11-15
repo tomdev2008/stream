@@ -1,10 +1,9 @@
-package com.sdu.stream.trident.simple.state;
+package com.sdu.stream.transaction.trident.simple.state;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.storm.trident.state.Serializer;
 import org.apache.storm.trident.state.StateType;
-import redis.clients.jedis.Jedis;
 
 import java.io.Serializable;
 

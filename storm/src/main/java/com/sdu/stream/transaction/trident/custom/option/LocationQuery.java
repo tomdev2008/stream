@@ -1,6 +1,6 @@
-package com.sdu.stream.trident.custom.option;
+package com.sdu.stream.transaction.trident.custom.option;
 
-import com.sdu.stream.trident.custom.state.LocationDb;
+import com.sdu.stream.transaction.trident.custom.state.LocationDb;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseQueryFunction;
 import org.apache.storm.trident.tuple.TridentTuple;

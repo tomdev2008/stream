@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author hanhan.zhang
  * */
 public class CustomEventProcess<T> implements EventProcessor {
+
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private final DataProvider<T> dataProvider;

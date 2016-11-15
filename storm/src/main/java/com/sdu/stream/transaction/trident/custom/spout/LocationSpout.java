@@ -1,4 +1,4 @@
-package com.sdu.stream.trident.custom.spout;
+package com.sdu.stream.transaction.trident.custom.spout;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
