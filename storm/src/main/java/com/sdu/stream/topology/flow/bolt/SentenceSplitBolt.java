@@ -1,7 +1,9 @@
 package com.sdu.stream.topology.flow.bolt;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.sdu.stream.utils.Const;
+import org.apache.storm.generated.Grouping;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -10,8 +12,10 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 import scala.util.parsing.combinator.testing.Str;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,17 +27,23 @@ public class SentenceSplitBolt implements IRichBolt {
 
     private OutputCollector _collector;
 
+    // 统计信息
     private CountMetric _ackMetric;
-
     private CountMetric _failMetric;
 
     private String _separator;
 
-    private int _taskId;
-
     private boolean _direct;
 
     private String _streamId;
+
+    // consume task set(下游消费者Task集合)
+    private List<Integer> _consumeTaskList;
+
+
+    public SentenceSplitBolt() {
+        this(Utils.DEFAULT_STREAM_ID, false);
+    }
 
     public SentenceSplitBolt(String _streamId, boolean _direct) {
         this._streamId = _streamId;
@@ -50,12 +60,28 @@ public class SentenceSplitBolt implements IRichBolt {
      * */
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this._collector = collector;
+
         // register metric for monitor
         this._ackMetric = context.registerMetric("sentence.split.ack.metric", new CountMetric(), 60);
         this._failMetric = context.registerMetric("sentence.split.fail.metric", new CountMetric(), 60);
-        this._taskId = context.getThisTaskId();
 
         this._separator = (String) stormConf.get(Const.SEPARATOR);
+
+        // 下游消费者Task
+        if (this._direct) {
+            if (this._consumeTaskList == null) {
+                this._consumeTaskList = Lists.newLinkedList();
+            }
+            Map<String, Map<String, Grouping>> consumeTarget = context.getThisTargets();
+            consumeTarget.forEach((streamId, target) ->
+                target.forEach((componentId, group) -> {
+                    if (group.is_set_direct()) {
+                        this._consumeTaskList.addAll(context.getComponentTasks(componentId));
+                    }
+                })
+            );
+        }
+
     }
 
     @Override
@@ -68,7 +94,7 @@ public class SentenceSplitBolt implements IRichBolt {
             String []fields = sentence.split(_separator);
             for (String field : fields) {
                 if (this._direct) {
-                    this._collector.emitDirect(this._taskId, _streamId, input, new Values(field, 1));
+                    this._consumeTaskList.forEach(taskId -> this._collector.emitDirect(taskId, _streamId, input, new Values(field, 1)));
                 } else {
                     this._collector.emit(this._streamId, input, new Values(field, 1));
                 }

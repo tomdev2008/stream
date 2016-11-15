@@ -9,9 +9,11 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,11 +27,10 @@ public class FixedCycleSpout implements IRichSpout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FixedCycleSpout.class);
 
-    private String _fieldName;
-
+    // 是否为直接流
     private boolean _direct;
 
-    // stream mark
+    // 流名称
     private String _streamId;
 
     private int _index;
@@ -37,20 +38,26 @@ public class FixedCycleSpout implements IRichSpout {
     // key = msgId, value = sending tuple
     private Map<String, List<Object>> _pendingTuple;
 
-    // send tuple
-    private List<Object> [] _sendTuple;
+    // tuple data
+    private ArrayList<List<Object>> _sendTuple;
+
+    private Fields _fields;
 
     private SpoutOutputCollector _collector;
     private CountMetric _sendMetric;
     private CountMetric _failMetric;
 
-    // consume task set
+    // consume task set(下游消费者)
     private List<Integer> _consumeTaskIdList;
 
-    public FixedCycleSpout(String _streamId, String _fieldName, boolean _direct, List<Object> ... _sendTuple) {
+    public FixedCycleSpout(Fields _fields, ArrayList<List<Object>> _sendTuple) {
+        this(Utils.DEFAULT_STREAM_ID, false, _fields, _sendTuple);
+    }
+
+    public FixedCycleSpout(String _streamId, boolean _direct, Fields _fields, ArrayList<List<Object>> _sendTuple) {
         this._streamId = _streamId;
-        this._fieldName = _fieldName;
         this._direct = _direct;
+        this._fields = _fields;
         this._sendTuple = _sendTuple;
     }
 
@@ -59,12 +66,12 @@ public class FixedCycleSpout implements IRichSpout {
         this._index = 0;
         _pendingTuple = Maps.newHashMap();
 
-        // register metric
+        // 统计信息
         this._sendMetric = context.registerMetric("cycle.spout.send.tuple.metric", new CountMetric(), 60);
         this._failMetric = context.registerMetric("cycle.spout.fail.tuple.metric", new CountMetric(), 60);
         this._collector = collector;
 
-        // get consume task id
+        // 直接流需要下游消费者
         if (this._direct) {
             this._consumeTaskIdList = Lists.newLinkedList();
             Map<String, Map<String, Grouping>> consumeTargets = context.getThisTargets();
@@ -102,11 +109,11 @@ public class FixedCycleSpout implements IRichSpout {
     @Override
     public void nextTuple() {
         this._sendMetric.incr();
-        if (this._index == _sendTuple.length) {
+        if (this._index == _sendTuple.size()) {
             this._index = 0;
         }
         String msgId = UUID.randomUUID().toString();
-        List<Object> tuple = this._sendTuple[this._index++];
+        List<Object> tuple = this._sendTuple.get(this._index++);
         sendTuple(msgId, tuple);
     }
 
@@ -127,7 +134,7 @@ public class FixedCycleSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(this._streamId, this._direct, new Fields(_fieldName));
+        declarer.declareStream(this._streamId, this._direct, this._fields);
     }
 
     @Override

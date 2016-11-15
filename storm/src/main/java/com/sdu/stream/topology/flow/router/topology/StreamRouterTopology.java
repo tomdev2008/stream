@@ -11,6 +11,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,14 +19,14 @@ import java.util.List;
  *
  * @author hanhan.zhang
  * */
-public class StreamRouterToplogy {
+public class StreamRouterTopology {
 
     public static void main(String[] args) {
         // send tuple
-        List<Object>[]tuple = new List[] {new Values("request: request log from ip 192.12.1.67"),
+        ArrayList<List<Object>> tuple = Lists.newArrayList(new Values("request: request log from ip 192.12.1.67"),
                                             new Values("request: request log from ip 192.124.13.69"),
                                             new Values("response: response log from ip 80.127.13.69"),
-                                            new Values("response: response log from ip 10.126.13.69")};
+                                            new Values("response: response log from ip 10.126.13.69"));
 
 
 
@@ -50,7 +51,7 @@ public class StreamRouterToplogy {
                                                                   .build());
 
         // spout
-        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, "log", false, tuple);
+        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, false, new Fields("log"), tuple);
 
         // bolt
         MultiStreamBolt multiStreamBolt = new MultiStreamBolt(streamDescs);
