@@ -37,26 +37,33 @@ public class OriginalTridentTopology {
                                                                 new Values("how many apples can you eat"));
         FixedCycleTridentSpout tridentSpout = new FixedCycleTridentSpout(spoutFields, sentenceTuple);
         String spoutComponentName = "fixed.cycle.trident.spout";
-        String spoutStreamName = "fixed.spout.trident.stream";
+        String spoutStreamName = "fixed.trident.spout.stream";
+        // 事务组件特有,对应Zookeeper中路径(保存元数据)
         String spoutTxStateId = "fixed.spout.tx.state";
-        String spoutBatchGroup = "fixed.spout.batch";
+        String spoutBatchGroup = "fixed.spout.batch.stream.group";
         int spoutParallelism = 1;
         builder.setSpout(spoutComponentName, spoutStreamName, spoutTxStateId, tridentSpout, spoutParallelism, spoutBatchGroup);
 
         // bolt
         String splitComponentName = "fixed.split.trident.batch.bolt";
+        String splitStreamName = "fixed.split.blot.stream";
+        String splitBatchGroup = "fixed.split.bolt.stream.batch.group";
         int boltSplitParallelism = 1;
-        Set<String> commitBatch = Sets.newHashSet();
+        // 表明哪些节点与该节点有联系(该Bolt节点将收听这些节点所对应的MasterBatchCoordinator节点的$commit流)
+        Set<String> committerBatches = Sets.newHashSet(spoutBatchGroup);
+
         Map<String, String> batchGroups = Maps.newHashMap();
+        batchGroups.put(splitStreamName, splitBatchGroup);
         SentenceSplitBolt splitBolt = new SentenceSplitBolt(new Fields("word", "number"));
-        builder.setBolt(splitComponentName, splitBolt, boltSplitParallelism, commitBatch, batchGroups)
-                .shuffleGrouping(splitComponentName, spoutStreamName);
+        builder.setBolt(splitComponentName, splitBolt, boltSplitParallelism, committerBatches, batchGroups)
+                .shuffleGrouping(spoutComponentName, spoutStreamName);
 
         // config
         Config config = new Config();
+        config.setDebug(true);
 
         LocalCluster localCluster = new LocalCluster();
-        String topologyName = "original.trident.topology";
+        String topologyName = "tridentTopology";
         localCluster.submitTopology(topologyName, config, builder.buildTopology());
     }
 
