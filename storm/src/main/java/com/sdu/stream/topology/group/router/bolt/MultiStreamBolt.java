@@ -44,7 +44,7 @@ public class MultiStreamBolt extends BaseRichBolt {
                     if (group.is_set_direct() && Strings.isNotEmpty(componentId)) {
                         List<Integer> executorTaskIdList = context.getComponentTasks(componentId);
                         if (executorTaskIdList == null || executorTaskIdList.isEmpty()) {
-                            throw new IllegalStateException("component '" + componentId + "' executor is zero !");
+                            throw new IllegalStateException("component '" + componentId + "' task is zero !");
                         }
                         if (this._consumeExecutorTaskList == null) {
                             this._consumeExecutorTaskList = Lists.newLinkedList();

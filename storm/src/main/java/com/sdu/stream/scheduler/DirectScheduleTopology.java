@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.group;
+package com.sdu.stream.scheduler;
 
 import com.google.common.collect.Lists;
 import com.sdu.stream.topology.group.bolt.SentenceSplitBolt;
@@ -15,13 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Storm Stream分组拓扑
+ * Storm调度拓扑
  *
  * @author hanhan.zhang
  * */
-public class StreamGroupTopology {
+public class DirectScheduleTopology {
 
     public static void main(String[] args) {
+
+        // config storm.yaml
+        System.setProperty("storm.conf.file", "storm/storm.yaml");
+
+//        Utils.readStormConfig();
+
 
         // builder
         TopologyBuilder topologyBuilder = new TopologyBuilder();

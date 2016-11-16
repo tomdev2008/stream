@@ -44,7 +44,6 @@ public class StreamPrintBolt extends BaseRichBolt {
         }
         if (this._debug) {
             LOGGER.info("Interest Stream {} , Receive Input : {} " , this._interestStream, str);
-//            System.out.println("Interest Stream '" + _interestStream + "', Receive Input : " + str);
         }
         this._collector.ack(input);
     }
