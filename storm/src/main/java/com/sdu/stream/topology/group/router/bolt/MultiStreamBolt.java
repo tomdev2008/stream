@@ -13,6 +13,7 @@ import org.apache.storm.tuple.Values;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Multiple Stream Bolt
@@ -26,7 +27,8 @@ public class MultiStreamBolt extends BaseRichBolt {
     private List<StreamDesc> _streamDescList;
 
     // task set consume the bolt
-    protected List<Integer> _consumeExecutorTaskList;
+    private AtomicInteger _consumeTaskIndex = new AtomicInteger(0);
+    private List<Integer> _consumeTaskIdList;
 
     public MultiStreamBolt(List<StreamDesc> streamDescList) {
         this._streamDescList = streamDescList;
@@ -42,14 +44,14 @@ public class MultiStreamBolt extends BaseRichBolt {
             if (consumeTarget != null && !consumeTarget.isEmpty()) {
                 consumeTarget.forEach((componentId, group) -> {
                     if (group.is_set_direct() && Strings.isNotEmpty(componentId)) {
-                        List<Integer> executorTaskIdList = context.getComponentTasks(componentId);
-                        if (executorTaskIdList == null || executorTaskIdList.isEmpty()) {
+                        List<Integer> taskIdList = context.getComponentTasks(componentId);
+                        if (taskIdList == null || taskIdList.isEmpty()) {
                             throw new IllegalStateException("component '" + componentId + "' task is zero !");
                         }
-                        if (this._consumeExecutorTaskList == null) {
-                            this._consumeExecutorTaskList = Lists.newLinkedList();
+                        if (this._consumeTaskIdList == null) {
+                            this._consumeTaskIdList = Lists.newLinkedList();
                         }
-                        this._consumeExecutorTaskList.addAll(executorTaskIdList);
+                        this._consumeTaskIdList.addAll(taskIdList);
                     }
                 });
             }
@@ -65,8 +67,8 @@ public class MultiStreamBolt extends BaseRichBolt {
         this._streamDescList.forEach(streamDesc -> {
             if (streamDesc.interest(str)) {
                 if (streamDesc.isDirect()) {
-                    this._consumeExecutorTaskList.forEach(executorTaskId ->
-                            this._collector.emitDirect(executorTaskId, streamDesc.getStreamId(), input, new Values(str)));
+                    int curr = this._consumeTaskIndex.getAndIncrement() % this._consumeTaskIdList.size();
+                    this._collector.emitDirect(curr, streamDesc.getStreamId(), input, new Values(str));
                 } else {
                     this._collector.emit(streamDesc.getStreamId(), input, new Values(str));
                 }

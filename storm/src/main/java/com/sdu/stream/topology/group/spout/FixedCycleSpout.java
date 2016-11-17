@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Fixed Cycle Spout
@@ -48,6 +49,7 @@ public class FixedCycleSpout implements IRichSpout {
     private CountMetric _failMetric;
 
     // consume task set(下游消费者)
+    private AtomicInteger _consumeTaskIndex = new AtomicInteger(0);
     private List<Integer> _consumeTaskIdList;
 
     public FixedCycleSpout(Fields _fields, ArrayList<List<Object>> _sendTuple) {
@@ -148,8 +150,13 @@ public class FixedCycleSpout implements IRichSpout {
             if (this._consumeTaskIdList == null || this._consumeTaskIdList.isEmpty()) {
                 throw new IllegalStateException("direct task is empty !");
             }
-            this._consumeTaskIdList.forEach(taskId ->
-                    this._collector.emitDirect(taskId, this._streamId, tuple, msgId));
+            // 错误:如果向下游的每个Task发送数据会抛NullPointException,参见官网:
+            // http://storm.apache.org/releases/1.0.2/Troubleshooting.html
+//            this._consumeTaskIdList.forEach(taskId ->
+//                    this._collector.emitDirect(taskId, this._streamId, tuple, msgId));
+            // 正确:向下游消费者其中一个Task发送消息
+            int curr = this._consumeTaskIndex.getAndIncrement() % this._consumeTaskIdList.size();
+            this._collector.emitDirect(curr, this._streamId, tuple, msgId);
         } else {
             this._collector.emit(this._streamId, tuple, msgId);
         }

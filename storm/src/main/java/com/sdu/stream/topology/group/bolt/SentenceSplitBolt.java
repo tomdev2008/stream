@@ -16,6 +16,7 @@ import org.apache.storm.utils.Utils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Sentence Split Bolt
@@ -37,6 +38,7 @@ public class SentenceSplitBolt implements IRichBolt {
     private String _streamId;
 
     // consume task set(下游消费者Task集合)
+    private AtomicInteger _consumeTaskIndex = new AtomicInteger(0);
     private List<Integer> _consumeTaskList;
 
 
@@ -93,7 +95,8 @@ public class SentenceSplitBolt implements IRichBolt {
             String []fields = sentence.split(_separator);
             for (String field : fields) {
                 if (this._direct) {
-                    this._consumeTaskList.forEach(taskId -> this._collector.emitDirect(taskId, _streamId, input, new Values(field, 1)));
+                    int curr = this._consumeTaskIndex.getAndIncrement() % this._consumeTaskList.size();
+                    this._collector.emitDirect(curr, this._streamId, input, new Values(field, 1));
                 } else {
                     this._collector.emit(this._streamId, input, new Values(field, 1));
                 }

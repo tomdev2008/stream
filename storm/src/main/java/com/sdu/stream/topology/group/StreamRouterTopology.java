@@ -1,4 +1,4 @@
-package com.sdu.stream.topology.group.router.topology;
+package com.sdu.stream.topology.group;
 
 import com.google.common.collect.Lists;
 import com.sdu.stream.topology.group.router.bolt.MultiStreamBolt;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tuple Stream Router Topology
+ * Tuple Stream Router Topology(下游消费组件通过component+streamId确认消费消息)
  *
  * @author hanhan.zhang
  * */
