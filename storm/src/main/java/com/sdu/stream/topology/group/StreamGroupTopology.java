@@ -61,6 +61,8 @@ public class StreamGroupTopology {
         config.put(Const.SEPARATOR, " ");
 
         LocalCluster localCluster = new LocalCluster();
+
+        // TopologyBuilder.createTopology()序列化各组件(属性必须可序列化)
         localCluster.submitTopology("flowTopology", config, topologyBuilder.createTopology());
 
     }
