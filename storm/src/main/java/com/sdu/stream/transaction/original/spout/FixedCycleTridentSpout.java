@@ -28,9 +28,13 @@ public class FixedCycleTridentSpout implements ITridentSpout {
 
     private ArrayList<List<Object>> _outputTuple;
 
-    public FixedCycleTridentSpout(Fields _fields, ArrayList<List<Object>> _outputTuple) {
+    // 批量消息大小
+    private int _batchSize;
+
+    public FixedCycleTridentSpout(Fields _fields, ArrayList<List<Object>> _outputTuple, int batchSize) {
         this._fields = _fields;
         this._outputTuple = _outputTuple;
+        this._batchSize = batchSize;
     }
 
     @Override
@@ -55,22 +59,22 @@ public class FixedCycleTridentSpout implements ITridentSpout {
     }
 
     /**
-     * coordinator spout to send tuple
-     * executor on master node
+     * 协调真正数据发送
+     *
+     * @author hanhan.zhang
      * */
     protected class FixedCycleTridentCoordinator implements BatchCoordinator<Map<Integer, List<List<Object>>>> {
 
         // tuple partition = executor number
         private int _numPartitions;
 
-        // key = 事务ID, value = 事务ID对应的起始索引
+        // key = 事务ID, value = 事务ID对应的起始索引(事务失败,可重新发数据)
         private Map<Long, Integer> _txIndices = new HashMap();
 
+        // 数据发送索引位置
         private int _emittedIndex = 0;
 
-        private int _batchSize = 3;
-
-        private long _commintTxid;
+        private long _commitTxid;
 
         public FixedCycleTridentCoordinator(int _numPartitions) {
             this._numPartitions = _numPartitions;
@@ -80,34 +84,47 @@ public class FixedCycleTridentSpout implements ITridentSpout {
             if (currMetadata != null) {
                 return currMetadata;
             }
-            // make sure every executor can receive tuple
-            Map<Integer, List<List<Object>>> partitionTupleMap = Maps.newHashMap();
-            this._txIndices.put(txid, this._emittedIndex);
-            for (int i = 0; i < this._numPartitions; ++i) {
-                List<List<Object>> tupleList = new ArrayList<>(this._batchSize);
-                for (int j = this._emittedIndex; j < this._batchSize; ++j) {
-                    tupleList.add(_outputTuple.get(j % _outputTuple.size()));
-                }
-                partitionTupleMap.put(i, tupleList);
-                this._emittedIndex += this._batchSize;
+            // 记录事务ID对应的发送消息的起始位置所以(保障事务ID失败,消息重新发送)
+            if (this._txIndices.containsKey(txid)) {
+                LOGGER.warn("事务拓扑ID[{}]数据处理失败,重新发送数据 !", txid);
+                int start = this._txIndices.get(txid);
+                return getSendTuple(start, this._numPartitions, _batchSize);
             }
+            LOGGER.debug("事务拓扑ID[{}]的数据索引位置是[{}]", txid, this._emittedIndex);
+            this._txIndices.put(txid, this._emittedIndex);
+            Map<Integer, List<List<Object>>> partitionTupleMap = this.getSendTuple(this._emittedIndex, this._numPartitions, _batchSize);
+            this._emittedIndex += this._numPartitions * _batchSize;
             return partitionTupleMap;
         }
 
         @Override
         public void success(long txid) {
+            LOGGER.debug("事务拓扑ID[{}]对应的数据处理成功 !", txid);
             this._txIndices.remove(txid);
-            this._commintTxid = txid;
+            this._commitTxid = txid;
         }
 
         @Override
         public boolean isReady(long txid) {
-            return txid > this._commintTxid;
+            return txid > this._commitTxid;
         }
 
         @Override
         public void close() {
 
+        }
+
+        protected Map<Integer, List<List<Object>>> getSendTuple(int index, int partition, int batchSize) {
+            // 按照下游消费者Task数目分区,每个Task接收_batchSize消息
+            Map<Integer, List<List<Object>>> partitionTupleMap = Maps.newHashMap();
+            for (int i = 0; i < partition; ++i) {
+                List<List<Object>> tupleList = new ArrayList<>(batchSize);
+                for (int j = index; j < batchSize; ++j) {
+                    tupleList.add(_outputTuple.get(j % _outputTuple.size()));
+                }
+                partitionTupleMap.put(i, tupleList);
+            }
+            return partitionTupleMap;
         }
     }
 

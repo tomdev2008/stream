@@ -39,7 +39,7 @@ public class TaskMonitorHook implements ITaskHook, Serializable {
         this._componentName = context.getThisComponentId();
         this._taskId = context.getThisTaskId();
         this._componentToTaskMap = context.getTaskToComponent();
-        LOGGER.info("初始化组件{}编号{}的Task对象!", this._componentName, this._taskId);
+        LOGGER.info("初始化组件{}编号{}的Task对象", this._componentName, this._taskId);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class TaskMonitorHook implements ITaskHook, Serializable {
             }
         });
         List<Object> emitTuple = info.values;
-        LOGGER.info("组件{}发送{}消息流给组件{}消息: {} .", emitComponentName, emitStreamName, consumeComponentToTask, emitTuple);
+        LOGGER.info("组件{}发送{}消息流给组件{}消息: {} ", emitComponentName, emitStreamName, consumeComponentToTask, emitTuple);
     }
 
     @Override
