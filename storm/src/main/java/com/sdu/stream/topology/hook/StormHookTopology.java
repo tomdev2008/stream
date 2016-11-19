@@ -31,12 +31,6 @@ public class StormHookTopology {
         // 设置工作节点监控
         topologyBuilder.addWorkerHook(new WokerMonitorHook());
 
-
-
-
-        //stream name
-
-
         String requestStreamId = "topology.request.stream";
         String requestFlag = "request";
         String responseStreamId = "topology.response.stream";
@@ -75,6 +69,7 @@ public class StormHookTopology {
                         .shuffleGrouping("multiple.stream.bolt", requestStreamId);
         topologyBuilder.setBolt("response.print.bolt", responsePrintBolt, 1)
                         .shuffleGrouping("multiple.stream.bolt", responseStreamId);
+
 
         Config config = new Config();
         // 设置Task监控
