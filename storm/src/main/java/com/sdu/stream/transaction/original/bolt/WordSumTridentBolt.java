@@ -3,7 +3,6 @@ package com.sdu.stream.transaction.original.bolt;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.storm.coordination.BatchOutputCollector;
-import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.trident.topology.BatchInfo;

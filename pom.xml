@@ -13,6 +13,7 @@
         <module>storm</module>
         <module>spark</module>
         <module>kafka</module>
+        <module>akka</module>
     </modules>
 
     <properties>

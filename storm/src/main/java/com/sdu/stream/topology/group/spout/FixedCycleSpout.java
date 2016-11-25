@@ -36,7 +36,7 @@ public class FixedCycleSpout implements IRichSpout {
 
     private int _index;
 
-    // key = msgId, value = sending tuple
+    // key = msgId, _value = sending tuple
     private Map<String, List<Object>> _pendingTuple;
 
     // tuple data

@@ -36,8 +36,6 @@ import java.util.Set;
  * */
 public class OriginalTridentTopology {
 
-
-
     public static void main(String[] args) {
         // builder
         TridentTopologyBuilder builder = new TridentTopologyBuilder();
@@ -64,7 +62,7 @@ public class OriginalTridentTopology {
         int boltSplitParallelism = 1;
 
         // 表明哪些节点与该节点有联系
-        Set<String> committerBatches = Sets.newHashSet(spoutBatchGroup);
+        Set<String> committerBatches = Sets.newHashSet();
 
         Map<String, String> batchGroups = Maps.newHashMap();
         batchGroups.put(splitStreamName, splitBatchGroup);
@@ -80,7 +78,7 @@ public class OriginalTridentTopology {
         int boltSumParallelism = 1;
 
         // 表明哪些节点与该节点有联系
-        Set<String> sumCommitterBatches = Sets.newHashSet(splitBatchGroup);
+        Set<String> sumCommitterBatches = Sets.newHashSet();
 
         Map<String, String> sumBatchGroups = Maps.newHashMap();
         sumBatchGroups.put(sumStreamName, sumBatchGroup);
@@ -126,7 +124,12 @@ public class OriginalTridentTopology {
         // 提交任务
         LocalCluster localCluster = new LocalCluster();
         String topologyName = "tridentTopology";
-        localCluster.submitTopology(topologyName, config, stormTopology);
+        try {
+            localCluster.submitTopology(topologyName, config, stormTopology);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

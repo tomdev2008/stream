@@ -34,7 +34,7 @@ public class StormDisruptorQueue {
 
     // batch size
     private int _inputBatchSize;
-    // key = threadId, value = thread event batch
+    // key = threadId, _value = thread event batch
     private final ConcurrentHashMap<Long, ThreadLocalInsert> _threadBatch = new ConcurrentHashMap<Long, ThreadLocalInsert>();
 
 

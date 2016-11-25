@@ -26,7 +26,7 @@ public class LocationDb implements State {
     }
 
     public void setBulkLocation(List<Long> userIds, List<String> locations) {
-        // code to access database and set location(check current transaction id value)
+        // code to access database and set location(check current transaction id _value)
         StringBuffer sb = new StringBuffer();
         sb.append("_curTxId=").append(_curTxId).append("\t");
         sb.append("_lastTxId=").append(_lastTxId).append("\t");

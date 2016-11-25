@@ -10,6 +10,7 @@ import org.apache.storm.trident.spout.TridentSpoutExecutor;
 import org.apache.storm.trident.topology.BatchInfo;
 import org.apache.storm.trident.topology.ITridentBatchBolt;
 import org.apache.storm.trident.topology.TransactionAttempt;
+import org.apache.storm.trident.topology.TridentBoltExecutor;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -118,6 +119,8 @@ public class SentenceSplitTridentBolt implements ITridentBatchBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declareStream(this._streamId, this._direct, this._field);
+        // 必须声明
+        declarer.declareStream(TridentBoltExecutor.COORD_STREAM("fixed.split.bolt.stream.batch.group"), true, this._field);
     }
 
     @Override

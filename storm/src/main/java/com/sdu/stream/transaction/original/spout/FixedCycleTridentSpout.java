@@ -59,7 +59,10 @@ public class FixedCycleTridentSpout implements ITridentSpout {
     }
 
     /**
-     * 协调真正数据发送
+     * 协调Spout数据发送
+     *
+     * Note ：
+     *  Tuple数据结构：Map<Integer, List<List<Object>>>
      *
      * @author hanhan.zhang
      * */
@@ -68,7 +71,7 @@ public class FixedCycleTridentSpout implements ITridentSpout {
         // tuple partition = executor number
         private int _numPartitions;
 
-        // key = 事务ID, value = 事务ID对应的起始索引(事务失败,可重新发数据)
+        // key = 事务ID, _value = 事务ID对应的起始索引(事务失败,可重新发数据)
         private Map<Long, Integer> _txIndices = new HashMap();
 
         // 数据发送索引位置
@@ -86,11 +89,11 @@ public class FixedCycleTridentSpout implements ITridentSpout {
             }
             // 记录事务ID对应的发送消息的起始位置所以(保障事务ID失败,消息重新发送)
             if (this._txIndices.containsKey(txid)) {
-                LOGGER.warn("事务拓扑ID[{}]数据处理失败,重新发送数据 !", txid);
+                LOGGER.warn("编号[{}]的事务数据处理失败,重新发送数据 !", txid);
                 int start = this._txIndices.get(txid);
                 return getSendTuple(start, this._numPartitions, _batchSize);
             }
-            LOGGER.debug("事务拓扑ID[{}]的数据索引位置是[{}]", txid, this._emittedIndex);
+            LOGGER.debug("编号[{}]的事务数据索引位置是[{}]", txid, this._emittedIndex);
             this._txIndices.put(txid, this._emittedIndex);
             Map<Integer, List<List<Object>>> partitionTupleMap = this.getSendTuple(this._emittedIndex, this._numPartitions, _batchSize);
             this._emittedIndex += this._numPartitions * _batchSize;
@@ -99,19 +102,19 @@ public class FixedCycleTridentSpout implements ITridentSpout {
 
         @Override
         public void success(long txid) {
-            LOGGER.debug("事务拓扑ID[{}]对应的数据处理成功 !", txid);
+            LOGGER.debug("编号[{}]的事务数据处理成功 !", txid);
             this._txIndices.remove(txid);
             this._commitTxid = txid;
         }
 
-        @Override
         public boolean isReady(long txid) {
             return txid > this._commitTxid;
         }
 
-        @Override
+        // 释放资源
         public void close() {
-
+            this._txIndices.clear();
+            this._txIndices = null;
         }
 
         protected Map<Integer, List<List<Object>>> getSendTuple(int index, int partition, int batchSize) {
@@ -129,8 +132,9 @@ public class FixedCycleTridentSpout implements ITridentSpout {
     }
 
     /**
-     * execute on multiple node
-     * send tuple to bolt
+     * 实现Tuple数据发送
+     *
+     * @author hanhan.zhang
      * */
     protected class FixedCycleTridentEmitter implements Emitter<Map<Integer, List<List<Object>>>> {
 

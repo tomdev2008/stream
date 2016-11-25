@@ -6,6 +6,7 @@ import com.sdu.stream.transaction.trident.simple.state.Option;
 import com.sdu.stream.transaction.trident.simple.state.RedisMapState;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
@@ -82,9 +83,11 @@ public class TridentTopologyBuilder {
         // parallelism
         tridentState = tridentState.parallelismHint(6);
 
+        StormTopology stormTopology = tridentTopology.build();
+
         Config conf = new Config();
         conf.setDebug(false);
         LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("tridentTopology", conf, tridentTopology.build());
+        cluster.submitTopology("tridentTopology", conf, stormTopology);
     }
 }
