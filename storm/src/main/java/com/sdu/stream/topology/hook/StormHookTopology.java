@@ -1,11 +1,11 @@
 package com.sdu.stream.topology.hook;
 
 import com.google.common.collect.Lists;
-import com.sdu.stream.scheduler.DirectSchedule;
+import com.sdu.stream.common.operation.impl.CycleTupleGenerator;
 import com.sdu.stream.topology.group.router.bolt.MultiStreamBolt;
 import com.sdu.stream.topology.group.router.bolt.StreamPrintBolt;
 import com.sdu.stream.topology.group.router.help.StreamDesc;
-import com.sdu.stream.topology.group.spout.FixedCycleSpout;
+import com.sdu.stream.common.FixedCycleSpout;
 import com.sdu.stream.topology.hook.task.TaskMonitorHook;
 import com.sdu.stream.topology.hook.worker.WokerMonitorHook;
 import org.apache.storm.Config;
@@ -49,12 +49,12 @@ public class StormHookTopology {
                                                                   .build());
 
         // spout
-        ArrayList<List<Object>> tuple = Lists.newArrayList(new Values("request: request log from ip 192.12.1.67"),
+        ArrayList<List<Object>> dataSource = Lists.newArrayList(new Values("request: request log from ip 192.12.1.67"),
                                                             new Values("request: request log from ip 192.124.13.69"),
                                                             new Values("response: response log from ip 80.127.13.69"),
                                                             new Values("response: response log from ip 10.126.13.69"));
         String spoutStreamId = "topology.spout.stream";
-        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, false, new Fields("log"), tuple);
+        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, false, new Fields("log"), new CycleTupleGenerator(dataSource));
         topologyBuilder.setSpout ("log.cycle.spout", cycleSpout, 1);
 
 

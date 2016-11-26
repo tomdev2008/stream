@@ -1,10 +1,11 @@
 package com.sdu.stream.topology.group;
 
 import com.google.common.collect.Lists;
+import com.sdu.stream.common.operation.impl.CycleTupleGenerator;
 import com.sdu.stream.topology.group.router.bolt.MultiStreamBolt;
 import com.sdu.stream.topology.group.router.bolt.StreamPrintBolt;
 import com.sdu.stream.topology.group.router.help.StreamDesc;
-import com.sdu.stream.topology.group.spout.FixedCycleSpout;
+import com.sdu.stream.common.FixedCycleSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.topology.TopologyBuilder;
@@ -23,7 +24,7 @@ public class StreamRouterTopology {
 
     public static void main(String[] args) {
         // send tuple
-        ArrayList<List<Object>> tuple = Lists.newArrayList(new Values("request: request log from ip 192.12.1.67"),
+        ArrayList<List<Object>> dataSource = Lists.newArrayList(new Values("request: request log from ip 192.12.1.67"),
                                             new Values("request: request log from ip 192.124.13.69"),
                                             new Values("response: response log from ip 80.127.13.69"),
                                             new Values("response: response log from ip 10.126.13.69"));
@@ -51,7 +52,7 @@ public class StreamRouterTopology {
                                                                   .build());
 
         // spout
-        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, false, new Fields("log"), tuple);
+        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, false, new Fields("log"), new CycleTupleGenerator(dataSource));
 
         // bolt
         MultiStreamBolt multiStreamBolt = new MultiStreamBolt(streamDescs);

@@ -1,9 +1,10 @@
 package com.sdu.stream.topology.group;
 
 import com.google.common.collect.Lists;
+import com.sdu.stream.common.operation.impl.CycleTupleGenerator;
 import com.sdu.stream.topology.group.bolt.SentenceSplitBolt;
 import com.sdu.stream.topology.group.bolt.WordSumBolt;
-import com.sdu.stream.topology.group.spout.FixedCycleSpout;
+import com.sdu.stream.common.FixedCycleSpout;
 import com.sdu.stream.utils.Const;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -26,16 +27,11 @@ public class StreamGroupTopology {
         // builder
         TopologyBuilder topologyBuilder = new TopologyBuilder();
 
-        // spout
-        ArrayList<List<Object>> tuple = Lists.newArrayList(new Values("the cow jumped over the moon"),
-                                                            new Values("the man went to the store and bought some candy"),
-                                                            new Values("four score and seven years ago"),
-                                                            new Values("how many apples can you eat"));
         String spoutStreamId = "topology.flow.cycle.spout.stream";
         String spoutComponentName = "sentence.cycle.spout";
         boolean spoutStreamDirect = true;
         int spoutExecutorParallelism = 1;
-        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, spoutStreamDirect, new Fields("sentence"), tuple);
+        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStreamId, spoutStreamDirect, new Fields("sentence"), new CycleTupleGenerator());
         topologyBuilder.setSpout (spoutComponentName, cycleSpout, spoutExecutorParallelism);
 
         // bolt

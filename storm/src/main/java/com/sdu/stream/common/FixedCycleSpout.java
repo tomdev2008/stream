@@ -1,7 +1,8 @@
-package com.sdu.stream.topology.group.spout;
+package com.sdu.stream.common;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.sdu.stream.common.operation.TupleGenerator;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -30,19 +31,13 @@ public class FixedCycleSpout implements IRichSpout {
 
     // 是否为直接流
     private boolean _direct;
-
     // 流名称
     private String _streamId;
+    private Fields _fields;
 
-    private int _index;
 
     // key = msgId, _value = sending tuple
     private Map<String, List<Object>> _pendingTuple;
-
-    // tuple data
-    private ArrayList<List<Object>> _sendTuple;
-
-    private Fields _fields;
 
     private SpoutOutputCollector _collector;
     private CountMetric _sendMetric;
@@ -52,20 +47,22 @@ public class FixedCycleSpout implements IRichSpout {
     private AtomicInteger _consumeTaskIndex = new AtomicInteger(0);
     private List<Integer> _consumeTaskIdList;
 
-    public FixedCycleSpout(Fields _fields, ArrayList<List<Object>> _sendTuple) {
-        this(Utils.DEFAULT_STREAM_ID, false, _fields, _sendTuple);
+    // 数据源
+    private TupleGenerator _tupleGenerator;
+
+    public FixedCycleSpout(Fields _fields, TupleGenerator tupleGenerator) {
+        this(Utils.DEFAULT_STREAM_ID, false, _fields, tupleGenerator);
     }
 
-    public FixedCycleSpout(String _streamId, boolean _direct, Fields _fields, ArrayList<List<Object>> _sendTuple) {
+    public FixedCycleSpout(String _streamId, boolean _direct, Fields _fields, TupleGenerator tupleGenerator) {
         this._streamId = _streamId;
         this._direct = _direct;
         this._fields = _fields;
-        this._sendTuple = _sendTuple;
+        this._tupleGenerator = tupleGenerator;
     }
 
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        this._index = 0;
         _pendingTuple = Maps.newHashMap();
 
         // 统计信息
@@ -111,12 +108,9 @@ public class FixedCycleSpout implements IRichSpout {
     @Override
     public void nextTuple() {
         this._sendMetric.incr();
-        if (this._index == _sendTuple.size()) {
-            this._index = 0;
-        }
+        List<Object> sendTuple = this._tupleGenerator.generator();
         String msgId = UUID.randomUUID().toString();
-        List<Object> tuple = this._sendTuple.get(this._index++);
-        sendTuple(msgId, tuple);
+        sendTuple(msgId, sendTuple);
     }
 
     @Override
