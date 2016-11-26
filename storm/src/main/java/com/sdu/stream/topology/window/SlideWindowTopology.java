@@ -3,10 +3,10 @@ package com.sdu.stream.topology.window;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sdu.stream.common.FixedCycleSpout;
-import com.sdu.stream.common.operation.impl.CycleTupleGenerator;
+import com.sdu.stream.common.operation.TupleGenerator;
+import com.sdu.stream.common.operation.TupleOperation;
 import com.sdu.stream.topology.window.bolt.UserActionBolt;
 import com.sdu.stream.topology.window.bolt.UserActionStatisticBolt;
-import com.sdu.stream.common.operation.TupleOperation;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.topology.TopologyBuilder;
@@ -19,26 +19,29 @@ import org.apache.storm.windowing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Storm滑动窗口(如：每隔5秒计算过去20秒的用户的浏览量)
  *
  * Note：
  *
- *  |------------------------------------------------------------------------------------------------------
-    |1：Storm Window Tuple
-    | 1' 基于Tuple Size
-    | 2' 基于Tuple Timestamp(需要声明Tuple中Timestamp字段)
-    |
-    |2：{@link WindowedBoltExecutor}
-    | 1' {@link TriggerPolicy}负责触发窗口的滑动
-    | 2' {@link EvictionPolicy}负责触发窗口的生成
-    | 3' {@link WindowLifecycleListener}负责Tuple处理(失效Event确认Tuple,处理)
-    | 4' {@link WindowManager}管理窗口(窗口滑动、窗口生成、窗口事件处理)
-    |------------------------------------------------------------------------------------------------------
+ *  |------------------------------------------------------------------------------------------------------|
+    |1：Storm Window Tuple                                                                                 |
+    | 1' 基于Tuple Size                                                                                     |
+    |    a：WindowLength + SlideLength <= {@link Config#TOPOLOGY_MAX_SPOUT_PENDING}                        |
+    | 2' 基于Tuple Timestamp                                                                                |
+    |    a：WindowLength + SlideLength <= {@link Config#TOPOLOGY_MESSAGE_TIMEOUT_SECS}                     |
+    |    b: declare 'timestamp' field name                                                                 |
+    | 3' Tuple Size和Tuple Timestamp混合使用                                                                 |
+    |                                                                                                      |
+    |2：{@link WindowedBoltExecutor}                                                                       |
+    | 1' {@link TriggerPolicy}负责触发窗口的滑动                                                              |
+    | 2' {@link EvictionPolicy}负责触发窗口的生成                                                             |
+    | 3' {@link WindowLifecycleListener}负责Tuple处理(失效Event确认Tuple,处理)                                 |
+    | 4' {@link WindowManager}管理窗口(窗口滑动、窗口生成、窗口事件处理)                                           |
+    |------------------------------------------------------------------------------------------------------|
 
  ， * @author hanhan.zhang
  * */
@@ -50,27 +53,31 @@ public class SlideWindowTopology {
 
         TopologyBuilder topologyBuilder = new TopologyBuilder();
 
-        ArrayList<List<Object>> dataSource = Lists.newArrayList(new Values("256901", "glance"),
-                new Values("256902", "glance"),
-                new Values("256903", "click"),
-                new Values("256905", "click"),
-                new Values("256901", "order"),
-                new Values("256902", "order"),
-                new Values("256903", "click"),
-                new Values("256905", "click"),
-                new Values("256906", "glance"));
-
         // spout
+        TupleGenerator tupleGenerator = new TupleGenerator() {
+
+            Random random = new Random();
+
+            ArrayList<String> actionList = Lists.newArrayList("浏览", "点击", "下单");
+
+            @Override
+            public List<Object> generator() {
+                return new Values(UUID.randomUUID().toString(),
+                                    actionList.get(random.nextInt(actionList.size() - 1)),
+                                    System.currentTimeMillis());
+            }
+        };
+
         String spoutComponentName = "cycle.spout";
-        Fields spoutField = new Fields("userId", "actionType");
+        Fields spoutField = new Fields("uuid", "actionType", "actionTime");
         String spoutStream = "fixed.cycle.spout.stream";
-        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStream, false, spoutField, new CycleTupleGenerator(dataSource));
+        FixedCycleSpout cycleSpout = new FixedCycleSpout(spoutStream, false, spoutField, tupleGenerator);
         topologyBuilder.setSpout(spoutComponentName, cycleSpout, 1);
 
         // window bolt
         String actionComponentName = "user.action.bolt";
         String actionStream = "user.action.window.stream";
-        Fields actionField = new Fields("actionType", "number");
+        Fields actionField = new Fields("actionType", "actionTime", "number");
         UserActionBolt userActionBolt = new UserActionBolt(actionStream, false, actionField);
         topologyBuilder.setBolt(actionComponentName, userActionBolt, 1)
                        .shuffleGrouping(spoutComponentName, spoutStream);
@@ -91,11 +98,15 @@ public class SlideWindowTopology {
             });
             sumMap.forEach((actionType, num) -> LOGGER.info("在过去20MS内，{} Action数据是：{}", actionType, num));
         };
+
         String statisticComponentName = "user.action.statistic.bolt";
-        BaseWindowedBolt.Count windowLength = new BaseWindowedBolt.Count(10);
-        BaseWindowedBolt.Count slideLength = new BaseWindowedBolt.Count(10);
+//        BaseWindowedBolt.Count windowLength = new BaseWindowedBolt.Count(10);
+//        BaseWindowedBolt.Count slideLength = new BaseWindowedBolt.Count(10);
+        BaseWindowedBolt.Duration windowLength = new BaseWindowedBolt.Duration(20, TimeUnit.MILLISECONDS);
+        BaseWindowedBolt.Duration slideLength = new BaseWindowedBolt.Duration(10, TimeUnit.MILLISECONDS);
         UserActionStatisticBolt  statisticBolt = (UserActionStatisticBolt) new UserActionStatisticBolt(operation)
                                                         .withWindow(windowLength, slideLength);
+        statisticBolt.withTimestampField("actionTime");
 
         topologyBuilder.setBolt(statisticComponentName, statisticBolt, 1)
                        .fieldsGrouping(actionComponentName, actionStream, new Fields("actionType"));

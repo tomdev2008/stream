@@ -58,7 +58,8 @@ public class UserActionBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         try {
             String type = input.getStringByField("actionType");
-            List<Object> sendTuple = new Values(type, 1);
+            long time = input.getLongByField("actionTime");
+            List<Object> sendTuple = new Values(type, time, 1);
             if (this._direct) {
                 int index = this._curr.getAndIncrement();
                 int taskId = index % this._consumeTaskList.size();

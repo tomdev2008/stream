@@ -14,7 +14,6 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -107,6 +106,11 @@ public class FixedCycleSpout implements IRichSpout {
 
     @Override
     public void nextTuple() {
+//        try {
+//            TimeUnit.MILLISECONDS.sleep(10);
+//        } catch (Exception e) {
+//
+//        }
         this._sendMetric.incr();
         List<Object> sendTuple = this._tupleGenerator.generator();
         String msgId = UUID.randomUUID().toString();
