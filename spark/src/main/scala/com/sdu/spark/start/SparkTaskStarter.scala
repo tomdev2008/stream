@@ -34,7 +34,27 @@ import org.apache.spark.{SparkConf, SparkContext}
         3': TaskScheduler[SparkContext.createTaskScheduler() ===>> 创建TaskScheduler及SchedulerBackend]
 
         4': SchedulerBackend
+
         5': WEB-UI
+  *
+  * 3: 宽依赖和窄依赖
+        1': 宽依赖是指父RDD的所有输出会被指定的子RDD消费,如下图:
+                    |-----|            |-----|
+                    | rdd | ========>  | rdd |
+                    |-----|            |-----|
+
+                    |-----|            |-----|
+                    | rdd | ========>  | rdd |
+                    |-----|            |-----|
+        2': 窄依赖是指父RDD的所有输出会被不同的RDD消费,如下图
+                    |-----|            |-----|
+                    | rdd | -------->  | rdd |
+                    |-----| \          |-----|
+                             \
+                              \------->|-----|
+                                       | rdd |
+                                       |-----|
+        3': Spark Schedule计算RDD之间的依赖关系,并将窄依赖的RDD划分归并到同一个Stage中
   *
   *
   * Spark Cluster Manager =====>> http://spark.apache.org/docs/latest/cluster-overview.html
@@ -42,7 +62,6 @@ import org.apache.spark.{SparkConf, SparkContext}
   * @author hanhan.zhang
   * */
 object SparkTaskStarter {
-
 
   def start: Unit = {
 
@@ -77,6 +96,7 @@ object SparkTaskStarter {
        .flatMap(words => words.map(word => (word, 1)))
        // shuffle[repartition(如:repartition,coalesce),ByKey(如:groupByKey,reduceByKey),join(如:cogroup,join)操作会导致shuffle操作]
        .reduceByKey((a, b) => a + b)
+       // Job提交
        .foreach(tuple => println("statistic result : [" + tuple._1 + "," + tuple._2 + "]"))
 
   }
