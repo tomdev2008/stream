@@ -24,6 +24,19 @@ import org.apache.spark.{SparkConf, SparkContext}
     |                                                                  |----------------|    |
     |----------------------------------------------------------------------------------------|
   *
+  * 1: Spark集群中有四种节点:Cluster、Master、Driver和Executor,其中Driver并属于集群中单独的节点类型,运行与集群内部或独立于集群
+  *
+  * 2: SparkContext是Spark的主要接口,是Spark上层应用与底层实现的中转站,SparkContext在初始化过程中,主要涉及:
+        1': SparkEnv[包含组件:BlockManager, MapOutputTracker, ShuffleFetcher, ConnectionManager]
+
+        2': DAGScheduler
+
+        3': TaskScheduler[SparkContext.createTaskScheduler() ===>> 创建TaskScheduler及SchedulerBackend]
+
+        4': SchedulerBackend
+        5': WEB-UI
+  *
+  *
   * Spark Cluster Manager =====>> http://spark.apache.org/docs/latest/cluster-overview.html
   *
   * @author hanhan.zhang

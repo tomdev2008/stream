@@ -14,6 +14,7 @@
         <module>spark</module>
         <module>kafka</module>
         <module>akka</module>
+        <module>scala</module>
     </modules>
 
     <properties>
