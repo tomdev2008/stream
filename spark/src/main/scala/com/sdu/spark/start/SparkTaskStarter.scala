@@ -88,15 +88,17 @@ object SparkTaskStarter {
 
     // RDD Operation[Transformation和Action两种]
     // Transformation ===>> 对RDD变换生成新RDD[具有惰性,并不会立即触发计算,仅有当Action触发时,Transformation才会被触发]
-    // Action         ===>> RDD运行结果返回给Driver[Action运行在Driver端]
+    // Action         ===>> 触发Job提交
     rdd.filter(sentence => !Strings.isNullOrEmpty(sentence))
        // 一对一的关系
        .map(sentence => sentence.split(" "))
-       // 一对多的关系[将一条记录转为多条记录]
+       // 一对多的关系[一条记录转为多条记录]
        .flatMap(words => words.map(word => (word, 1)))
-       // shuffle[repartition(如:repartition,coalesce),ByKey(如:groupByKey,reduceByKey),join(如:cogroup,join)操作会导致shuffle操作]
+       // shuffle[repartition(如:repartition,coalesce)
+       // ByKey(如:groupByKey,reduceByKey),join(如:cogroup,join)操作会导致shuffle操作]
        .reduceByKey((a, b) => a + b)
-       // Job提交
+       // Spark的Action触发Job的提交,Spark的根据RDD是否为窄依赖划分Stage
+       // 运行在Driver端
        .foreach(tuple => println("statistic result : [" + tuple._1 + "," + tuple._2 + "]"))
 
   }

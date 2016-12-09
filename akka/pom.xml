@@ -27,6 +27,11 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.11</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-remote_2.11</artifactId>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -40,6 +45,13 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor_2.11</artifactId>
+                <version>${akka.actor.version}</version>
+            </dependency>
+
+            <!-- AKKA Remote必须依赖的Jar -->
+            <dependency>
+                <groupId>com.typesafe.akka</groupId>
+                <artifactId>akka-remote_2.11</artifactId>
                 <version>${akka.actor.version}</version>
             </dependency>
 
