@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import akka.actor.{ActorSystem, Props}
-import com.sdu.akka.start.local.LocalActor
+import com.sdu.akka.start.actor.LocalActor
 import com.sdu.akka.start.msg.HeartBeatMsg
 
 /**

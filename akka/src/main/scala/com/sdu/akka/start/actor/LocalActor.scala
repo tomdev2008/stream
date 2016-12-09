@@ -1,4 +1,4 @@
-package com.sdu.akka.start.local
+package com.sdu.akka.start.actor
 
 import java.util.concurrent.TimeUnit
 

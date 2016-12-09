@@ -1,4 +1,4 @@
-package com.sdu.akka.start.remote
+package com.sdu.akka.remote.actor
 
 import java.text.SimpleDateFormat
 import java.util.Date

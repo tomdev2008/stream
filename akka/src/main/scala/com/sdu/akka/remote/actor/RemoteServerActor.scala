@@ -1,4 +1,4 @@
-package com.sdu.akka.start.remote
+package com.sdu.akka.remote.actor
 
 import akka.actor.{Actor, ActorLogging}
 import com.sdu.akka.start.msg.HeartBeatMsg
@@ -8,7 +8,7 @@ import com.sdu.akka.start.msg.HeartBeatMsg
   *
   * @author hanhan.zhang
   * */
-class RemoteActorServer extends Actor with ActorLogging {
+class RemoteServerActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case HeartBeatMsg(fromIp, sendTime) => {

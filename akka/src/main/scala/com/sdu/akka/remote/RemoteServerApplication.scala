@@ -1,7 +1,7 @@
-package com.sdu.akka.start
+package com.sdu.akka.remote
 
 import akka.actor.{ActorSystem, Props}
-import com.sdu.akka.start.remote.RemoteActorServer
+import com.sdu.akka.remote.actor.RemoteServerActor
 import com.typesafe.config.ConfigFactory
 
 /**
@@ -16,7 +16,7 @@ object RemoteServerApplication {
     remoteServerSystem.log.info("remote-server-system started !")
 
     // 创建Actor
-    remoteServerSystem.actorOf(Props(new RemoteActorServer), "remote-actor-server")
+    remoteServerSystem.actorOf(Props(new RemoteServerActor), "remote-actor-server")
   }
 
 }

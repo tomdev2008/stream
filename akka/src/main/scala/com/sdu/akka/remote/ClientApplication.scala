@@ -1,11 +1,11 @@
-package com.sdu.akka.start
+package com.sdu.akka.remote
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import akka.actor.{ActorSystem, Props}
+import com.sdu.akka.remote.actor.ClientActor
 import com.sdu.akka.start.msg.ActorStart
-import com.sdu.akka.start.remote.ClientActor
 import com.typesafe.config.ConfigFactory
 
 object ClientApplication {
