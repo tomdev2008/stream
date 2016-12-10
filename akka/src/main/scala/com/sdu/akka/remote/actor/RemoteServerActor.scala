@@ -1,7 +1,7 @@
 package com.sdu.akka.remote.actor
 
 import akka.actor.{Actor, ActorLogging}
-import com.sdu.akka.start.msg.HeartBeatMsg
+import com.sdu.akka.remote.event.HeartBeatEvent
 
 /**
   * AKKA Routing[解决点对点通信,官方文档:http://doc.akka.io/docs/akka/current/scala/remoting.html]
@@ -11,7 +11,7 @@ import com.sdu.akka.start.msg.HeartBeatMsg
 class RemoteServerActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
-    case HeartBeatMsg(fromIp, sendTime) => {
+    case HeartBeatEvent(fromIp, sendTime) => {
       log.info("receive heart beat from : ", (fromIp, sendTime))
     }
     case _ => log.info("unknown actor message !")

@@ -5,7 +5,7 @@ import java.util.Date
 
 import akka.actor.{ActorSystem, Props}
 import com.sdu.akka.remote.actor.ClientActor
-import com.sdu.akka.start.msg.ActorStart
+import com.sdu.akka.remote.event.ActorStartEvent
 import com.typesafe.config.ConfigFactory
 
 object ClientApplication {
@@ -23,7 +23,7 @@ object ClientApplication {
     // 创建Actor
     val clientActor = clientActorSystem.actorOf(Props(new ClientActor(path)), "client-actor")
 
-    clientActor ! ActorStart("client-actor", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
+    clientActor ! ActorStartEvent("client-actor", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
 
   }
 
