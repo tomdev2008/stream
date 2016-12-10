@@ -8,7 +8,7 @@ import com.sdu.akka.remote.event.HeartBeatEvent
   *
   * @author hanhan.zhang
   * */
-class RemoteServerActor extends Actor with ActorLogging {
+class ServerActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case HeartBeatEvent(fromIp, sendTime) => {
@@ -16,5 +16,11 @@ class RemoteServerActor extends Actor with ActorLogging {
     }
     case _ => log.info("unknown actor message !")
   }
+
+}
+
+object ServerActor {
+
+  def apply(): ServerActor = new ServerActor()
 
 }

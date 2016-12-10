@@ -14,7 +14,7 @@ import com.typesafe.config.ConfigFactory
   *
   * @author hanhan.zhang
   * */
-object ClusterEmitApplication {
+object DataEmitApplication {
 
   def main(args: Array[String]): Unit = {
     // 节点角色
@@ -31,7 +31,6 @@ object ClusterEmitApplication {
       // 创建EmitActor
       emitActorSystem.actorOf(Props(DataEmitActor(FixedCycleDataSpout[String]("1"))), s"data-emit-actor-$port")
     })
-
 
   }
 

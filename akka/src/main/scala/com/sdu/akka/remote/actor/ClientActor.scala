@@ -28,4 +28,11 @@ class ClientActor(remotePath : String) extends Actor with ActorLogging{
       log.info("unknown actor message !")
     }
   }
+
+}
+
+object ClientActor {
+
+  def apply(remotePath: String): ClientActor = new ClientActor(remotePath)
+
 }
